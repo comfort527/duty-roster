@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>勤休輪值簿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@700&family=IBM+Plex+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: 勤務板 — sticky top bar (title + view tabs), tool strip, then the working grid; summary chips sit above each grid */
+:root{
+  --bg:#edf1ee; --surface:#fbfcfb; --ink:#15201a; --muted:#59685f; --line:#d4ddd7; --line-strong:#a9b7af;
+  --accent:#1d6b47; --accent-ink:#ffffff; --accent-soft:#dcece3;
+  --wk-ink:#a85a08; --wk-bg:#f9ecd9; --wk-row:#fdf7ee;
+  --alert:#c0352b; --alert-soft:#fbe4e1;
+  --duty-bg:#15201a; --duty-ink:#ffffff;
+  --p1-bg:#dce7f7; --p1-ink:#22508f;
+  --p2-bg:#e9e1f6; --p2-ink:#5a3a8e;
+  --t3-bg:#d8eeec; --t3-ink:#1d6460;
+  --n-bg:#e8ece9; --n-ink:#36423b;
+  --off-cell:#c4e2cd;
+  --y-rest:#2c8754; --y-comp:#7b873a; --y-stop:#e08bcd; --y-other:#2f9fd0; --y-train:#56616b;
+  --y-work:#ffffff; --y-work-ink:#15201a; --y-none:#e1e7e3; --y-none-ink:#8b978f; --y-on-ink:#ffffff;
+  --today:#e9b22f; --sel:#2f6fd6;
+  --font-display:"Chiron Sung HK","Noto Serif TC","Songti TC",serif;
+  --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --font-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1411; --surface:#151d19; --ink:#e4ebe6; --muted:#90a097; --line:#25312b; --line-strong:#3b4942;
+  --accent:#55c08a; --accent-ink:#0b1410; --accent-soft:#18301f;
+  --wk-ink:#f1a957; --wk-bg:#2c2216; --wk-row:#19170f;
+  --alert:#ff7f70; --alert-soft:#3a1c18;
+  --duty-bg:#e4ebe6; --duty-ink:#0e1411;
+  --p1-bg:#1c2b43; --p1-ink:#9fc2f6; --p2-bg:#2a2140; --p2-ink:#cbb5f3;
+  --t3-bg:#163432; --t3-ink:#88d7cf; --n-bg:#212b26; --n-ink:#c3cec8; --off-cell:#1f4630;
+  --y-rest:#2f8a57; --y-comp:#7d8a3a; --y-stop:#c06aab; --y-other:#2a8cbb; --y-train:#4b5660;
+  --y-work:#d6dfda; --y-work-ink:#101713; --y-none:#1b2420; --y-none-ink:#56645c; --y-on-ink:#ffffff;
+  --today:#f2c14e; --sel:#6ea2ff; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0e1411; --surface:#151d19; --ink:#e4ebe6; --muted:#90a097; --line:#25312b; --line-strong:#3b4942;
+  --accent:#55c08a; --accent-ink:#0b1410; --accent-soft:#18301f;
+  --wk-ink:#f1a957; --wk-bg:#2c2216; --wk-row:#19170f;
+  --alert:#ff7f70; --alert-soft:#3a1c18;
+  --duty-bg:#e4ebe6; --duty-ink:#0e1411;
+  --p1-bg:#1c2b43; --p1-ink:#9fc2f6; --p2-bg:#2a2140; --p2-ink:#cbb5f3;
+  --t3-bg:#163432; --t3-ink:#88d7cf; --n-bg:#212b26; --n-ink:#c3cec8; --off-cell:#1f4630;
+  --y-rest:#2f8a57; --y-comp:#7d8a3a; --y-stop:#c06aab; --y-other:#2a8cbb; --y-train:#4b5660;
+  --y-work:#d6dfda; --y-work-ink:#101713; --y-none:#1b2420; --y-none-ink:#56645c; --y-on-ink:#ffffff;
+  --today:#f2c14e; --sel:#6ea2ff; color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:10px 20px;padding-block:12px}
+.brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+.brand h1{font-family:var(--font-display);font-size:22px;letter-spacing:.06em;margin:0;line-height:1.2}
+.brand .yr{font-family:var(--font-data);font-size:13px;color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:3px}
+.tabs a{padding:6px 14px;border-radius:6px;text-decoration:none;color:var(--muted);font-weight:500}
+.tabs a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+
+main{padding-block:18px 64px;display:grid;gap:16px}
+.note{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:8px;padding:8px 12px}
+.note b{color:var(--ink);font-weight:500}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+
+/* tool strip */
+.tools{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center}
+.group{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.glabel{font-size:12px;letter-spacing:.08em;color:var(--muted);margin-right:2px}
+.monthnav{display:flex;align-items:center;gap:4px}
+.monthnav output{font-family:var(--font-data);font-weight:600;font-size:16px;min-width:8.5em;text-align:center}
+.ibtn{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-size:16px;line-height:1}
+.btn{height:32px;padding:0 12px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);font-weight:500;white-space:nowrap}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:hover,.ibtn:hover{border-color:var(--ink)}
+.brush{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:34px;padding:0 6px;border-radius:8px;border:1px solid var(--line);background:var(--surface)}
+.brush[aria-pressed="true"]{border-color:var(--sel);box-shadow:0 0 0 2px var(--sel) inset}
+.brush .txt{font-size:12px;color:var(--muted);padding:0 4px}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:24px;padding:0 5px;border-radius:5px;font-family:var(--font-data);font-weight:600;font-size:13px;letter-spacing:-.02em;background:var(--n-bg);color:var(--n-ink)}
+.k-duty{background:var(--duty-bg);color:var(--duty-ink)}
+.k-p1{background:var(--p1-bg);color:var(--p1-ink);font-weight:700}
+.k-p2{background:var(--p2-bg);color:var(--p2-ink);font-weight:700}
+.k-t3{background:var(--t3-bg);color:var(--t3-ink);font-weight:700}
+.k-off{background:transparent;color:var(--alert);font-size:16px;font-weight:600}
+.k-comp{background:var(--y-comp);color:var(--y-on-ink)}
+.k-other{background:var(--y-other);color:var(--y-on-ink)}
+.k-stop{background:var(--y-stop);color:var(--y-on-ink)}
+.k-train{background:var(--y-train);color:var(--y-on-ink);box-shadow:inset 0 0 0 1.5px var(--alert)}
+.k-work{background:var(--y-work);color:var(--y-work-ink);box-shadow:inset 0 0 0 1px var(--line-strong)}
+
+/* summary chips */
+.sum{display:flex;flex-wrap:wrap;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px}
+.pill .n{font-family:var(--font-data);font-weight:600;font-size:15px}
+.pill.ok{border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--accent-soft)}
+.pill.bad{border-color:color-mix(in srgb,var(--alert) 50%,transparent);background:var(--alert-soft);color:var(--alert)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor}
+
+/* roster grid */
+.gridwrap{overflow:auto;max-height:min(74vh,980px);border:1px solid var(--line);border-radius:10px;background:var(--surface);-webkit-overflow-scrolling:touch}
+table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+.roster{min-width:100%}
+.roster th,.roster td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0;text-align:center;background:var(--surface)}
+.roster thead th{position:sticky;top:0;z-index:3;padding:8px 6px 6px;vertical-align:bottom}
+.roster .c-date{position:sticky;left:0;z-index:2;width:1%;min-width:0;padding:0 6px;text-align:left;white-space:nowrap}
+.roster thead .c-date{z-index:4;font-size:12px;color:var(--muted);font-weight:500}
+.roster tfoot th,.roster tfoot td{position:sticky;bottom:0;z-index:2;background:var(--bg);font-family:var(--font-data);font-size:13px;height:30px}
+.roster tfoot tr:first-child th,.roster tfoot tr:first-child td{bottom:30px;border-top:1px solid var(--line-strong)}
+.roster tfoot th{left:0;z-index:4;font-family:var(--font-body);font-weight:500;font-size:12px;color:var(--muted);text-align:left;padding:0 8px}
+.dn{font-family:var(--font-data);font-weight:600;display:inline-block;min-width:1.6em}
+.dw{font-size:12px;color:var(--muted);margin-left:4px}
+.roster tr.we th.c-date{background:var(--wk-bg)}
+.roster tr.we .dn,.roster tr.we .dw{color:var(--wk-ink)}
+.roster tr.we td{background:var(--wk-row)}
+.roster tr.today th.c-date{box-shadow:inset 0 0 0 2px var(--alert)}
+td.cell{width:66px;min-width:58px;height:34px;cursor:pointer;user-select:none;-webkit-user-select:none}
+td.cell.is-off{background:var(--off-cell)!important}
+td.cell:hover{box-shadow:inset 0 0 0 1px var(--line-strong)}
+td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
+.nm{width:66px;border:0;border-bottom:1px dashed var(--line-strong);background:transparent;text-align:center;font-weight:700;font-size:13px;padding:2px 0}
+.nm.me{color:var(--accent)}
+.offsel{margin-top:6px;width:66px;font-size:11px;font-family:var(--font-data);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:1px 2px}
+.c-note{min-width:170px;text-align:left!important}
+.roster thead .c-note{text-align:left;font-size:12px;color:var(--muted);font-weight:500}
+.note-in{width:100%;height:33px;border:0;background:transparent;padding:0 8px;font-size:13px}
+.note-in:focus{outline:2px solid var(--sel);outline-offset:-2px;background:var(--surface)}
+
+/* side panel */
+.split{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+@media (max-width:900px){.split{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:14px;min-width:0}
+.panel h2{font-size:13px;letter-spacing:.1em;color:var(--muted);margin:0;font-weight:500}
+.legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}
+.legend input{width:100%;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:3px 8px;font-size:13px}
+.seq{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.seq .step{display:inline-flex;align-items:center;gap:2px}
+.seq .arrow{color:var(--muted);font-size:11px}
+.seq .x{border:1px solid var(--line);background:var(--bg);color:var(--muted);font-size:11px;line-height:1;width:16px;height:16px;border-radius:50%;padding:0;margin-left:1px}
+.hint{font-size:12px;color:var(--muted);margin:0}
+.kbd{font-family:var(--font-data);font-size:11px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;padding:0 4px}
+
+/* year grid */
+.ystats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.ystats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.stat .lab{font-size:12px;color:var(--muted)}
+.stat .val{font-family:var(--font-data);font-weight:600;font-size:24px;line-height:1.3}
+.stat input{width:4.2em;font-family:var(--font-data);font-weight:600;font-size:22px;border:0;border-bottom:1px dashed var(--line-strong);background:transparent;padding:0}
+.meter{position:relative;height:10px;border-radius:5px;background:var(--y-none);overflow:visible;margin-top:8px}
+.meter i{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--y-rest)}
+.meter b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.year{margin:0 auto}
+.year th,.year td{padding:0;text-align:center}
+.year thead th{font-size:12px;font-weight:500;color:var(--muted);padding:6px 0;position:sticky;top:0;background:var(--surface);z-index:2}
+.year .wl{width:34px;font-size:12px;color:var(--muted);font-weight:500}
+.year tr.we .wl{color:var(--wk-ink);font-weight:700}
+.year tr.we td,.year tr.we th{background:var(--wk-row)}
+.year tr.sat td,.year tr.sat th{border-top:2px solid color-mix(in srgb,var(--wk-ink) 55%,transparent)}
+.year tr.sun td,.year tr.sun th{border-bottom:2px solid color-mix(in srgb,var(--wk-ink) 55%,transparent)}
+.yc{width:44px;height:24px;padding:1px!important}
+.yd{display:flex;align-items:center;justify-content:center;height:100%;border-radius:3px;font-family:var(--font-data);font-size:12px;font-weight:600;cursor:pointer;background:var(--y-none);color:var(--y-none-ink);position:relative}
+.yd:hover{box-shadow:inset 0 0 0 1.5px var(--sel)}
+.we .yd{text-decoration:underline;text-underline-offset:2px}
+.yd.t-rest{background:var(--y-rest);color:var(--y-on-ink)}
+.yd.t-comp{background:var(--y-comp);color:var(--y-on-ink)}
+.yd.t-stop{background:var(--y-stop);color:var(--y-on-ink)}
+.yd.t-other{background:var(--y-other);color:var(--y-on-ink)}
+.yd.t-train{background:var(--y-train);color:var(--y-on-ink);box-shadow:inset 0 0 0 1.5px var(--alert)}
+.yd.t-work{background:var(--y-work);color:var(--y-work-ink);box-shadow:inset 0 0 0 1px var(--line)}
+.we .yd.t-work,.we .yd:not([class*="t-"]){color:var(--wk-ink)}
+.yd.auto::after{content:"";position:absolute;top:2px;right:2px;width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.75}
+.yd.today{outline:2px solid var(--today);outline-offset:-1px}
+.year tfoot th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:4px 6px;white-space:nowrap}
+.year tfoot td{font-family:var(--font-data);font-weight:600;font-size:13px;height:26px;border-top:1px solid var(--line)}
+.year tfoot tr.total td{background:var(--accent-soft);color:var(--ink)}
+.year tfoot td.yt{color:var(--accent)}
+.ywrap{overflow:auto;max-height:min(78vh,1180px);border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 8px 8px}
+.yd-sw{width:22px;height:18px;border-radius:3px;display:inline-block}
+
+/* toast & copy box */
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:9px;display:flex;gap:14px;align-items:center;font-size:13px;z-index:20;max-width:calc(100% - 32px)}
+.toast button{background:none;border:0;color:var(--today);font-weight:700;padding:0}
+@media (prefers-reduced-motion:no-preference){.toast{animation:up .18s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:.4}}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand"><h1>勤休輪值簿</h1><span class="yr" id="brandYear">2026</span></div>
+    <nav class="tabs" aria-label="檢視">
+      <a href="#roster" id="tab-roster">月班表</a>
+      <a href="#year" id="tab-year">年度休假</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- 月班表 -->
+  <section id="view-roster" class="split">
+    <div style="display:grid;gap:12px;min-width:0">
+      <div class="tools">
+        <div class="monthnav">
+          <button class="ibtn" id="prevM" type="button" aria-label="上個月">‹</button>
+          <output id="monthLabel"></output>
+          <button class="ibtn" id="nextM" type="button" aria-label="下個月">›</button>
+        </div>
+        <div class="group" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
+        <div class="group" id="lbrushes" role="toolbar" aria-label="假別畫筆"><span class="glabel">假別</span></div>
+      </div>
+      <div class="sum" id="rsum"></div>
+      <div class="gridwrap" id="rgridwrap"><table class="roster" id="rgrid"></table></div>
+    </div>
+    <aside class="panel">
+      <div style="display:grid;gap:8px">
+        <h2>本月操作</h2>
+        <div class="group">
+          <button class="btn primary" id="fillBtn" type="button">依輪序填入</button>
+          <label class="group" for="fillN" style="gap:4px;font-size:13px">本月起<input id="fillN" type="number" min="1" max="24" step="1" class="btn" style="width:4.2em;padding:0 6px;text-align:center">個月</label>
+          <button class="btn" id="clearBtn" type="button">清空本月</button>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px">
+        <h2>輪序</h2>
+        <div class="seq" id="seq"></div>
+        <div class="group"><span class="glabel">加入</span><span id="seqAdd" class="group"></span></div>
+      </div>
+    </aside>
+  </section>
+
+  <!-- 年度休假 -->
+  <section id="view-year" hidden style="display:grid;gap:14px">
+    <div class="tools">
+      <div class="monthnav">
+        <button class="ibtn" id="prevY" type="button" aria-label="前一年">‹</button>
+        <output id="yearLabel"></output>
+        <button class="ibtn" id="nextY" type="button" aria-label="下一年">›</button>
+      </div>
+      <div class="group"><label class="glabel" for="meSel">人員</label><select id="meSel" class="btn"></select></div>
+      <div class="group" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div>
+    </div>
+    <div class="ystats" id="ystats"></div>
+    <p class="hint">右上角有小點的格子是從「月班表」自動帶入（✕ 算休假；補休、其他假、停休、國外、上班照假別帶入；其餘班別算上班）；用畫筆點過就改為手動標記，選「自動」可還原。六、日以橘色底與上下框線標出，跟你原本紅框的六日列對應。</p>
+    <div class="ywrap"><table class="year" id="ygrid"></table></div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+const KEY='duty-roster-v1';
+const WD=['一','二','三','四','五','六','日'];
+const MN=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
+const CODES=[
+  {k:'值',cls:'k-duty',d:'值班'},
+  {k:'1',cls:'k-p1',d:''},
+  {k:'2',cls:'k-p2',d:''},
+  {k:'3',cls:'k-t3',d:''},
+  {k:'〇',cls:'',d:''},
+  {k:'X',cls:'k-off',d:'休假'}
+];
+const CM=Object.fromEntries(CODES.map(c=>[c.k,c]));
+const LEAVES=[
+  {k:'X',n:'休假',t:'rest',off:true},
+  {k:'補休',n:'補休24時',t:'comp',cls:'k-comp',off:true},
+  {k:'其他',n:'其他假',t:'other',cls:'k-other',off:true},
+  {k:'停休',n:'停休',t:'stop',cls:'k-stop'},
+  {k:'國外',n:'國外專案',t:'train',cls:'k-train',away:true},
+  {k:'上班',n:'上班',t:'work',cls:'k-work'}
+];
+LEAVES.forEach(l=>{if(!CM[l.k])CM[l.k]={k:l.k,cls:l.cls,d:l.n};});
+const LM=Object.fromEntries(LEAVES.map(l=>[l.k,l]));
+const isOff=c=>!!(LM[c]&&LM[c].off);
+const YT=[
+  {k:'rest',n:'休假'},{k:'comp',n:'補休24時'},{k:'other',n:'其他假'},
+  {k:'stop',n:'停休'},{k:'train',n:'國外專案'},{k:'work',n:'上班'}
+];
+const mod=(a,n)=>((a%n)+n)%n;
+const dayIdx=(y,m,d)=>Math.round(Date.UTC(y,m-1,d)/864e5);
+const ym=(y,m)=>y+'-'+String(m).padStart(2,'0');
+const ds=(y,m,d)=>ym(y,m)+'-'+String(d).padStart(2,'0');
+const dim=(y,m)=>new Date(y,m,0).getDate();
+const wdOf=(y,m,d)=>(new Date(y,m-1,d).getDay()+6)%7;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+const now=new Date(); const TODAY=ds(now.getFullYear(),now.getMonth()+1,now.getDate());
+
+function sample(){
+  const s={year:2026,people:['隊員甲','隊員乙','隊員丙','隊員丁','隊員戊','隊員己','隊員庚'],
+    offsets:[null,0,1,2,3,4,5],seq:['2','值','1','3','X','X'],roster:{},me:1,yearMarks:{},
+    target:146,announced:116,desc:{},demo:true};
+  [[2026,11],[2026,12]].forEach(([y,m])=>{
+    const R=s.roster[ym(y,m)]={};
+    s.people.forEach((_,p)=>{R[p]={};
+      for(let d=1;d<=dim(y,m);d++){const i=dayIdx(y,m,d);
+        R[p][d]=s.offsets[p]==null?['3','X','2','1'][mod(i,4)]:s.seq[mod(i+s.offsets[p],s.seq.length)];}
+    });
+  });
+  let rc=0;
+  for(let m=1;m<=10;m++)for(let d=1;d<=dim(2026,m);d++){
+    const c=s.seq[mod(dayIdx(2026,m,d)+s.offsets[s.me],s.seq.length)];
+    let t='work'; if(c==='X'){rc++;t=rc%3===0?'comp':'rest';}
+    s.yearMarks[ds(2026,m,d)]=t;
+  }
+  const range=(m,a,b,t)=>{for(let d=a;d<=b;d++)s.yearMarks[ds(2026,m,d)]=t;};
+  range(3,30,31,'stop');range(4,1,2,'stop');range(6,18,27,'train');range(10,5,13,'train');range(8,17,19,'other');
+  return s;
+}
+function load(){try{const t=localStorage.getItem(KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const RENAME={'先1':'1','先2':'2','3〇':'3','3○':'3','休假':'X','補休24時':'補休','補24':'補休','補24時':'補休','其他假':'其他','公差訓練':'國外','公差':'國外','國外專案':'國外'};
+function migrate(s){if(!s)return s;const r=c=>RENAME[c]||c;
+  s.seq=(s.seq||[]).map(r);
+  Object.values(s.roster||{}).forEach(M=>Object.values(M).forEach(P=>Object.keys(P).forEach(d=>{P[d]=r(P[d]);})));
+  const D={};Object.keys(s.desc||{}).forEach(k=>{const n=r(k);if(D[n]==null||k===n)D[n]=s.desc[k];});s.desc=D;return s;}
+let S=migrate(load())||sample();
+let cur={y:now.getFullYear(),m:now.getMonth()+1};
+if(!S.roster[ym(cur.y,cur.m)]){cur={y:2026,m:12};}
+let brush='X',ybrush='rest',painting=false,ypainting=false,lastCell=null,undo=null;
+
+/* ---------- toast ---------- */
+let tt;
+function toast(msg,withUndo){
+  const el=$('toast');el.innerHTML='<span>'+esc(msg)+'</span>'+(withUndo&&undo?'<button type="button" id="undoBtn">復原</button>':'');
+  el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,5000);
+  const u=$('undoBtn');if(u)u.onclick=()=>{Object.entries(undo).forEach(([k,v])=>{if(v==null)delete S.roster[k];else S.roster[k]=JSON.parse(v);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
+}
+const fillCount=()=>Math.min(24,Math.max(1,parseInt(S.fillMonths,10)||4));
+function span(){const a=[];for(let i=0;i<fillCount();i++){let m=cur.m+i,y=cur.y;while(m>12){m-=12;y++;}a.push([y,m]);}return a;}
+function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]=S.roster[k]?JSON.stringify(S.roster[k]):null;});}
+
+/* ---------- roster ---------- */
+const month=()=>{const k=ym(cur.y,cur.m);return S.roster[k]||(S.roster[k]={});};
+const getC=(p,d)=>((S.roster[ym(cur.y,cur.m)]||{})[p]||{})[d]||'';
+function setC(p,d,c){const R=month();R[p]=R[p]||{};if(c)R[p][d]=c;else delete R[p][d];}
+function chip(c){if(!c)return'';const k=CM[c];return '<span class="chip '+(k?k.cls:'')+'">'+(c==='X'?'✕':esc(c))+'</span>';}
+function seqLabel(pos){const c=S.seq[pos];const tot=S.seq.filter(x=>x===c).length;if(tot<2)return c==='X'?'✕':c;
+  const n=S.seq.slice(0,pos).filter(x=>x===c).length;return (c==='X'?'✕':c)+'('+(n+1)+')';}
+
+function renderBrushes(){
+  const g=$('brushes');g.querySelectorAll('button').forEach(b=>b.remove());
+  const items=CODES.map(c=>({k:c.k,html:chip(c.k)})).concat([{k:'erase',html:'<span class="txt">清除</span>'},{k:'select',html:'<span class="txt">選取</span>'}]);
+  items.forEach(it=>{const b=document.createElement('button');b.type='button';b.className='brush';b.innerHTML=it.html;
+    b.setAttribute('aria-pressed',brush===it.k);b.title=it.k==='erase'?'清除格子':it.k==='select'?'只選取，不修改（貼上用）':'畫筆：'+it.k;
+    b.onclick=()=>{brush=it.k;renderBrushes();};g.appendChild(b);});
+  const lg=$('lbrushes');lg.querySelectorAll('button').forEach(b=>b.remove());
+  LEAVES.forEach(l=>{const b=document.createElement('button');b.type='button';b.className='brush';
+    b.innerHTML='<span class="yd t-'+l.t+' yd-sw" aria-hidden="true"></span><span class="txt">'+l.n+'</span>';
+    b.setAttribute('aria-pressed',brush===l.k);b.title='畫筆：'+l.n;
+    b.onclick=()=>{brush=l.k;renderBrushes();};lg.appendChild(b);});
+}
+
+function renderRoster(){
+  $('monthLabel').value=cur.y+' 年 '+cur.m+' 月';
+  const n=dim(cur.y,cur.m),idx1=dayIdx(cur.y,cur.m,1),L=S.seq.length;
+  let h='<thead><tr><th class="c-date" scope="col">日期</th>';
+  S.people.forEach((nm,p)=>{
+    let o='<option value="">手動</option>';
+    for(let i=0;i<L;i++){const pos=mod(idx1+i,L);o+='<option value="'+i+'"'+(S.offsets[p]===i?' selected':'')+'>'+esc(seqLabel(pos))+'</option>';}
+    h+='<th scope="col"><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'" aria-label="第'+(p+1)+'位姓名">'+
+       '<select class="offsel" id="off-'+p+'" data-p="'+p+'" aria-label="'+esc(nm)+' 本月1日的輪序">'+o+'</select></th>';
+  });
+  h+='<th scope="col" class="c-note">勤務註記</th></tr></thead><tbody>';
+  const NT=(S.notes||{})[ym(cur.y,cur.m)]||{};
+  for(let d=1;d<=n;d++){
+    const w=wdOf(cur.y,cur.m,d),we=w>=5,td=ds(cur.y,cur.m,d)===TODAY;
+    h+='<tr class="'+(we?'we ':'')+(td?'today':'')+'"><th class="c-date" scope="row"><span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
+    S.people.forEach((_,p)=>{const c=getC(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
+    h+='<td class="c-note"><input class="note-in" id="note-'+d+'" data-d="'+d+'" value="'+esc(NT[d]||'')+'" aria-label="'+cur.m+'/'+d+' 勤務註記"></td></tr>';
+  }
+  h+='</tbody><tfoot><tr><th scope="row">值班</th>'+S.people.map((_,p)=>'<td id="fd-'+p+'"></td>').join('')+'<td></td></tr>'+
+     '<tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+'<td></td></tr></tfoot>';
+  $('rgrid').innerHTML=h;
+  updStats();
+}
+function updStats(){
+  const n=dim(cur.y,cur.m);
+  const fd=S.people.map(()=>0),fo=S.people.map(()=>0);
+  for(let d=1;d<=n;d++){
+    S.people.forEach((_,p)=>{const c=getC(p,d);if(c==='值')fd[p]++;if(isOff(c))fo[p]++;});
+  }
+  S.people.forEach((_,p)=>{$('fd-'+p).textContent=fd[p];$('fo-'+p).textContent=fo[p];});
+  const me=S.people[S.me]||'';
+  let s='';
+  s+='<span class="pill">'+esc(me)+' 本月休 <span class="n">'+(fo[S.me]||0)+'</span> 天 · 值班 <span class="n">'+(fd[S.me]||0)+'</span> 次</span>';
+  $('rsum').innerHTML=s;
+}
+function paintCell(td){
+  const p=+td.dataset.p,d=+td.dataset.d;
+  if(brush==='select')return;
+  const c=brush==='erase'?'':brush;if(getC(p,d)===c)return;
+  setC(p,d,c);td.innerHTML=chip(c);td.classList.toggle('is-off',isOff(c));updStats();save();
+}
+function selCell(td){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));td.classList.add('sel');lastCell={p:+td.dataset.p,d:+td.dataset.d};}
+const rg=$('rgrid');
+rg.addEventListener('pointerdown',e=>{const td=e.target.closest('td.cell');if(!td)return;
+  if(e.pointerType==='mouse'){painting=true;e.preventDefault();}
+  selCell(td);paintCell(td);});
+rg.addEventListener('pointerover',e=>{if(!painting)return;const td=e.target.closest('td.cell');if(td)paintCell(td);});
+window.addEventListener('pointerup',()=>{painting=false;ypainting=false;});
+rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-in'))return;
+  S.notes=S.notes||{};const k=ym(cur.y,cur.m);const M=S.notes[k]||(S.notes[k]={});
+  if(t.value)M[t.dataset.d]=t.value;else delete M[t.dataset.d];save();});
+rg.addEventListener('change',e=>{
+  const t=e.target;const p=+t.dataset.p;
+  if(t.classList.contains('nm')){S.people[p]=t.value.trim()||('隊員'+(p+1));save();renderYearSel();updStats();}
+  if(t.classList.contains('offsel')){
+    snap(span());const v=t.value===''?null:+t.value;
+    // stored offset relates to day index; option i means day 1 lands at pos mod(idx1+i)
+    S.offsets[p]=v;if(v!=null)span().forEach(([y,m])=>fillPerson(p,y,m));save();renderRoster();
+    if(v!=null)toast(S.people[p]+' 已依輪序重排 '+spanLabel(),true);
+  }
+});
+function fillPerson(p,y,m){const n=dim(y,m),o=S.offsets[p],L=S.seq.length;if(!L)return;
+  const k=ym(y,m),R=S.roster[k]||(S.roster[k]={});R[p]=R[p]||{};
+  for(let d=1;d<=n;d++)R[p][d]=S.seq[mod(dayIdx(y,m,d)+o,L)];}
+function spanLabel(){const a=span();const f=([y,m])=>m+'月';return f(a[0])+'～'+f(a[a.length-1])+'（'+a.length+' 個月）';}
+$('fillN').value=fillCount();
+$('fillN').addEventListener('change',e=>{S.fillMonths=fillCount.call(null,S.fillMonths=e.target.value);e.target.value=S.fillMonths;save();});
+$('fillBtn').onclick=()=>{const a=span();snap(a);let k=0;S.people.forEach((_,p)=>{if(S.offsets[p]!=null){a.forEach(([y,m])=>fillPerson(p,y,m));k++;}});save();renderRoster();renderYear();toast('已依輪序填入 '+spanLabel()+'，共 '+k+' 人（「手動」的人不變）',true);};
+$('clearBtn').onclick=()=>{snap();S.roster[ym(cur.y,cur.m)]={};save();renderRoster();toast('已清空本月',true);};
+$('prevM').onclick=()=>{cur.m--;if(cur.m<1){cur.m=12;cur.y--;}lastCell=null;renderRoster();};
+$('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;renderRoster();};
+
+function norm(v){v=String(v).trim().replace(/値/g,'值').replace(/\s+/g,'');
+  if(/^[xX✕×╳]$/.test(v))return'X';v=v.replace(/[○◯Oo]/g,'〇');return RENAME[v]||v;}
+document.addEventListener('paste',e=>{
+  if($('view-roster').hidden||!lastCell)return;
+  if(e.target.closest&&e.target.closest('input,textarea,select'))return;
+  const txt=(e.clipboardData||window.clipboardData).getData('text/plain');if(!txt)return;e.preventDefault();
+  snap();const rows=txt.replace(/\r/g,'').split('\n');if(rows[rows.length-1]==='')rows.pop();
+  const n=dim(cur.y,cur.m);let k=0;
+  rows.forEach((r,ri)=>r.split('\t').forEach((v,ci)=>{const p=lastCell.p+ci,d=lastCell.d+ri;if(p<S.people.length&&d<=n){setC(p,d,norm(v));k++;}}));
+  save();renderRoster();toast('已貼上 '+k+' 格',true);
+});
+
+function renderSeq(){
+  $('seq').innerHTML=S.seq.map((c,i)=>(i?'<span class="arrow">→</span>':'')+'<span class="step">'+chip(c)+'<button type="button" class="x" data-i="'+i+'" aria-label="移除第'+(i+1)+'格" title="移除">−</button></span>').join('')||'<span class="hint">輪序是空的，從下方加入班別</span>';
+  $('seqAdd').innerHTML=CODES.map(c=>'<button type="button" class="brush" data-k="'+esc(c.k)+'" aria-label="加入 '+esc(c.k)+'">'+chip(c.k)+'</button>').join('');
+}
+$('seq').addEventListener('click',e=>{const b=e.target.closest('.x');if(!b)return;S.seq.splice(+b.dataset.i,1);fixOffsets();save();renderSeq();renderRoster();});
+$('seqAdd').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;S.seq.push(b.dataset.k);save();renderSeq();renderRoster();});
+function fixOffsets(){S.offsets=S.offsets.map(o=>o==null||!S.seq.length?null:o%S.seq.length);}
+
+
+/* ---------- year ---------- */
+function yType(y,m,d){
+  const key=ds(y,m,d);if(S.yearMarks[key])return{t:S.yearMarks[key],auto:false};
+  const c=((S.roster[ym(y,m)]||{})[S.me]||{})[d];
+  if(c)return{t:LM[c]?LM[c].t:'work',auto:true};return{t:'',auto:false};
+}
+function renderYBrushes(){
+  const g=$('ybrushes');g.querySelectorAll('button').forEach(b=>b.remove());
+  YT.concat([{k:'auto',n:'自動'}]).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='brush';
+    b.innerHTML=t.k==='auto'?'<span class="txt">自動</span>':'<span class="yd t-'+t.k+' yd-sw" aria-hidden="true"></span><span class="txt">'+t.n+'</span>';
+    b.setAttribute('aria-pressed',ybrush===t.k);b.onclick=()=>{ybrush=t.k;renderYBrushes();};g.appendChild(b);});
+}
+function renderYearSel(){$('meSel').innerHTML=S.people.map((n,p)=>'<option value="'+p+'"'+(p===S.me?' selected':'')+'>'+esc(n)+'</option>').join('');}
+$('meSel').onchange=e=>{S.me=+e.target.value;save();renderYear();renderRoster();};
+
+function renderYear(){
+  const Y=S.year;$('yearLabel').value=Y+' 年';$('brandYear').textContent=Y;
+  const off=[];for(let m=1;m<=12;m++)off.push(wdOf(Y,m,1));
+  const rows=Math.max(...off.map((o,i)=>o+dim(Y,i+1)));
+  const cnt={};YT.forEach(t=>cnt[t.k]=Array(12).fill(0));
+  let h='<thead><tr><th class="wl">週</th>'+MN.map(m=>'<th>'+m+'月</th>').join('')+'<th class="wl">全年</th></tr></thead><tbody>';
+  for(let r=0;r<rows;r++){
+    const w=r%7,we=w>=5;
+    h+='<tr class="'+(we?'we ':'')+(w===5?'sat':w===6?'sun':'')+'"><th class="wl" scope="row">'+WD[w]+'</th>';
+    for(let m=1;m<=12;m++){
+      const d=r-off[m-1]+1;
+      if(d<1||d>dim(Y,m)){h+='<td class="yc"></td>';continue;}
+      const t=yType(Y,m,d);if(t.t)cnt[t.t][m-1]++;
+      const key=ds(Y,m,d);
+      h+='<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(key===TODAY?' today':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+m+'/'+d+'（'+WD[w]+'）'+(t.t?YT.find(x=>x.k===t.t).n:'未標記')+(t.auto?'・自動帶入':'')+'">'+d+'</div></td>';
+    }
+    h+='<th class="wl" scope="row">'+WD[w]+'</th></tr>';
+  }
+  const sum=a=>a.reduce((x,y)=>x+y,0);
+  const total=Array(12).fill(0).map((_,i)=>cnt.rest[i]+cnt.comp[i]+cnt.other[i]);
+  const frow=(lab,arr,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+lab+'</th>'+arr.map(v=>'<td>'+(v||'·')+'</td>').join('')+'<td class="yt">'+sum(arr)+'</td></tr>';
+  h+='</tbody><tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow('其他假',cnt.other)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',total,'total')+'</tfoot>';
+  $('ygrid').innerHTML=h;
+  // fix tfoot first col label width: the label th sits in the weekday column
+  const T=sum(total),tgt=+S.target||0,ann=+S.announced||0,diff=tgt-T;
+  const pct=tgt?Math.min(100,T/tgt*100):0,apct=tgt?Math.min(100,ann/tgt*100):0;
+  $('ystats').innerHTML=
+    '<div class="stat"><div class="lab"><label for="tgt">年總應休日數</label></div><input id="tgt" type="number" min="0" value="'+tgt+'"></div>'+
+    '<div class="stat"><div class="lab"><label for="ann">人事總處公告</label></div><input id="ann" type="number" min="0" value="'+ann+'"></div>'+
+    '<div class="stat"><div class="lab">已排月總休假</div><div class="val">'+T+'</div><div class="meter" title="黑線為人事總處公告日數"><i style="width:'+pct+'%"></i><b style="left:'+apct+'%"></b></div></div>'+
+    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val" style="color:'+(diff>=0?'var(--ink)':'var(--alert)')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sum(cnt.rest)+' ＋ 補休 '+sum(cnt.comp)+' ＋ 其他 '+sum(cnt.other)+'</div></div>';
+}
+$('ystats').addEventListener('change',e=>{if(e.target.id==='tgt')S.target=+e.target.value;if(e.target.id==='ann')S.announced=+e.target.value;save();renderYear();});
+const yg=$('ygrid');
+function ypaint(el){const m=+el.dataset.m,d=+el.dataset.d,key=ds(S.year,m,d);
+  if(ybrush==='auto'){if(!S.yearMarks[key])return;delete S.yearMarks[key];}else{if(S.yearMarks[key]===ybrush)return;S.yearMarks[key]=ybrush;}
+  save();}
+yg.addEventListener('pointerdown',e=>{const el=e.target.closest('.yd');if(!el)return;if(e.pointerType==='mouse'){ypainting=true;e.preventDefault();}ypaint(el);renderYear();});
+yg.addEventListener('pointerover',e=>{if(!ypainting)return;const el=e.target.closest('.yd');if(!el)return;const before=JSON.stringify(S.yearMarks[ds(S.year,+el.dataset.m,+el.dataset.d)]);ypaint(el);if(before!==JSON.stringify(S.yearMarks[ds(S.year,+el.dataset.m,+el.dataset.d)]))renderYear();});
+$('prevY').onclick=()=>{S.year--;save();renderYear();};
+$('nextY').onclick=()=>{S.year++;save();renderYear();};
+
+/* ---------- shell ---------- */
+function route(){
+  const v=location.hash==='#year'?'year':'roster';
+  $('view-roster').hidden=v!=='roster';$('view-year').hidden=v!=='year';
+  $('tab-roster').toggleAttribute('aria-current',v==='roster');$('tab-year').toggleAttribute('aria-current',v==='year');
+  if(v==='roster')$('tab-roster').setAttribute('aria-current','page');else $('tab-year').setAttribute('aria-current','page');
+  if(v==='year')renderYear();
+}
+function renderAll(){renderBrushes();renderSeq();renderRoster();renderYearSel();renderYBrushes();renderYear();route();}
+window.addEventListener('hashchange',route);
+renderAll();
+})();
+</script>
+
+</body>
+
+</html>
