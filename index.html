@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -59,7 +59,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.55}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--sel);outline-offset:2px}
@@ -217,7 +217,9 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   #view-roster > div{gap:10px!important}
   .tools{gap:8px}
   .tools>.brushbar{flex:1 1 100%}
-  .monthnav output{font-size:15px;min-width:7.5em}
+  .monthnav output{font-size:15px;min-width:6.6em}
+  .monthnav{gap:2px}
+  .ibtn{width:30px;height:30px}
   /* brushes: one swipeable row */
   .brushbar{flex-wrap:nowrap;overflow-x:auto;width:100%;gap:12px;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .brushbar::-webkit-scrollbar{display:none}
@@ -226,7 +228,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .brush .txt{font-size:11px;padding:0 2px;white-space:nowrap}
   .pill{padding:4px 10px;font-size:12px}
   /* roster: fit all people on screen */
-  .gridwrap{max-height:70vh;max-height:calc(100dvh - 250px);min-height:340px}
+  .gridwrap{max-height:75vh;max-height:calc(100dvh - 190px);min-height:340px}
   .roster thead th{padding:6px 1px 4px}
   .roster .c-date{padding:0 4px}
   .dn{min-width:1.3em;font-size:13px}
@@ -237,7 +239,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .nm{width:42px;font-size:12px}
   .offsel{width:42px;font-size:10px;padding:0}
   .c-note{min-width:140px}
-  .note-in{height:31px;font-size:12px}
+  .note-in{height:31px;font-size:16px}
   .roster tfoot th,.roster tfoot td{height:28px;font-size:12px}
   .roster tfoot tr:first-child th,.roster tfoot tr:first-child td{bottom:28px}
   .panel{padding:12px;gap:12px}
@@ -255,16 +257,6 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 }
 </style>
 
-<header class="top">
-  <div class="wrap">
-    <div class="brand"><h1>勤休輪值簿</h1><span class="yr" id="brandYear">2026</span></div>
-    <nav class="tabs" aria-label="檢視">
-      <a href="#roster" id="tab-roster">月班表</a>
-      <a href="#year" id="tab-year">年度休假</a>
-    </nav>
-  </div>
-</header>
-
 <main class="wrap">
 
   <!-- 月班表 -->
@@ -276,6 +268,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
           <output id="monthLabel"></output>
           <button class="ibtn" id="nextM" type="button" aria-label="下個月">›</button>
         </div>
+        <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
         <div class="brushbar">
           <div class="group" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
           <div class="group" id="lbrushes" role="toolbar" aria-label="假別畫筆"><span class="glabel">假別</span></div>
@@ -309,6 +302,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <output id="yearLabel"></output>
         <button class="ibtn" id="nextY" type="button" aria-label="下一年">›</button>
       </div>
+      <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
       <div class="group"><label class="glabel" for="meSel">人員</label><select id="meSel" class="btn"></select></div>
       <div class="brushbar"><div class="group" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div></div>
     </div>
@@ -532,7 +526,7 @@ function renderYearSel(){$('meSel').innerHTML=S.people.map((n,p)=>'<option value
 $('meSel').onchange=e=>{S.me=+e.target.value;save();renderYear();renderRoster();};
 
 function renderYear(){
-  const Y=S.year;$('yearLabel').value=Y+' 年';$('brandYear').textContent=Y;
+  const Y=S.year;$('yearLabel').value=Y+' 年';
   const off=[];for(let m=1;m<=12;m++)off.push(wdOf(Y,m,1));
   const rows=Math.max(...off.map((o,i)=>o+dim(Y,i+1)));
   const cnt={};YT.forEach(t=>cnt[t.k]=Array(12).fill(0));
@@ -577,8 +571,7 @@ $('nextY').onclick=()=>{S.year++;save();renderYear();};
 function route(){
   const v=location.hash==='#year'?'year':'roster';
   $('view-roster').hidden=v!=='roster';$('view-year').hidden=v!=='year';
-  $('tab-roster').toggleAttribute('aria-current',v==='roster');$('tab-year').toggleAttribute('aria-current',v==='year');
-  if(v==='roster')$('tab-roster').setAttribute('aria-current','page');else $('tab-year').setAttribute('aria-current','page');
+  document.querySelectorAll('[data-tab]').forEach(a=>{if(a.dataset.tab===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   if(v==='year')renderYear();
 }
 function renderAll(){renderBrushes();renderSeq();renderRoster();renderYearSel();renderYBrushes();renderYear();route();}
