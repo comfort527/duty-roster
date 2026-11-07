@@ -235,7 +235,8 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   /* roster: fit all people on screen */
   .gridwrap{max-height:none;overflow:visible;border-radius:0;touch-action:pan-y}
   .roster{width:100%;table-layout:fixed}
-  .roster thead th{padding:6px 1px 4px;top:env(safe-area-inset-top,0px)}
+  .roster thead th{padding:6px 1px 4px;top:calc(env(safe-area-inset-top,0px) + var(--rtoolsH,0px))}
+  #rtools,#ytools{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);margin-inline:-16px;padding:8px 16px 6px;box-shadow:0 1px 0 var(--line)}
   .roster .c-date{width:36px;padding:0 2px}
   .roster tfoot th,.roster tfoot td{bottom:env(safe-area-inset-bottom,0px)}
   .roster thead th:not(.c-date):not(.c-note){width:39.5px}
@@ -261,7 +262,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .mfull{display:none}.mshort{display:inline}
   .ywrap{padding:0 4px 6px;overflow:visible;max-height:none;touch-action:pan-y}
   .year{width:100%}
-  .year thead th{top:env(safe-area-inset-top,0px)}
+  .year thead th{top:calc(env(safe-area-inset-top,0px) + var(--ytoolsH,0px))}
   .year .wl{width:22px;font-size:11px}
   .yc{width:25px;height:22px}
   .yd{font-size:11px}
@@ -278,7 +279,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   <!-- 月班表 -->
   <section id="view-roster" class="split">
     <div style="display:grid;gap:12px;min-width:0">
-      <div class="tools">
+      <div class="tools" id="rtools">
         <div class="monthnav">
           <button class="ibtn" id="prevM" type="button" aria-label="上個月">‹</button>
           <output id="monthLabel"></output>
@@ -324,7 +325,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 
   <!-- 年度休假 -->
   <section id="view-year" hidden style="display:grid;gap:14px">
-    <div class="tools">
+    <div class="tools" id="ytools">
       <div class="monthnav">
         <button class="ibtn" id="prevY" type="button" aria-label="前一年">‹</button>
         <output id="yearLabel"></output>
@@ -613,6 +614,8 @@ function route(){
 function renderAll(){renderBrushes();renderSeq();renderRoster();renderYearSel();renderYBrushes();renderYear();route();}
 window.addEventListener('hashchange',route);
 renderAll();
+// 手機：功能列固定在上方，表頭姓名接在功能列下面
+if(window.ResizeObserver){const ro=new ResizeObserver(es=>es.forEach(en=>{const el=en.target;document.documentElement.style.setProperty('--'+el.id+'H',(el.offsetHeight||0)+'px');}));ro.observe($('rtools'));ro.observe($('ytools'));}
 
 /* ---------- 雲端同步（GitHub：把班表存成私人 repo 裡的 data.json） ---------- */
 const GHK='duty-roster-gh';            // 每台裝置各自記住 repo 與 token（只存在本機瀏覽器）
