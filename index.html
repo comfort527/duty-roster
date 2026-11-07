@@ -304,6 +304,11 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <div class="seq" id="seq"></div>
         <div class="group"><span class="glabel">加入</span><span id="seqAdd" class="group"></span></div>
       </div>
+      <div style="display:grid;gap:8px" id="syncBox" hidden>
+        <h2>雲端同步</h2>
+        <div class="group" id="syncRow"></div>
+        <p class="hint" id="syncMsg"></p>
+      </div>
     </aside>
   </section>
 
@@ -329,6 +334,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 <script>
 (function(){
 const KEY='duty-roster-v1';
+var onSaved=null;
 const WD=['一','二','三','四','五','六','日'];
 const MN=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
 const CODES=[
@@ -387,7 +393,7 @@ function sample(){
   return s;
 }
 function load(){try{const t=localStorage.getItem(KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(onSaved)onSaved();}
 const RENAME={'先1':'1','先2':'2','3〇':'3','3○':'3','休假':'X','補休24時':'補休','補24':'補休','補24時':'補休','其他假':'其他','公差訓練':'國外','公差':'國外','國外專案':'國外'};
 function migrate(s){if(!s)return s;const r=c=>RENAME[c]||c;
   s.seq=(s.seq||[]).map(r);
@@ -597,6 +603,66 @@ function route(){
 function renderAll(){renderBrushes();renderSeq();renderRoster();renderYearSel();renderYBrushes();renderYear();route();}
 window.addEventListener('hashchange',route);
 renderAll();
+
+/* ---------- 雲端同步（Firebase：Google 登入 + Firestore） ---------- */
+const FIREBASE_CONFIG=null; // 在這裡貼上 Firebase 網頁應用程式的 firebaseConfig 物件
+const CLIENT=Math.random().toString(36).slice(2);
+let fbAuth=null,docRef=null,unsub=null,pushT=null,pendingRemote=null,me=null;
+function loadScript(src){return new Promise((res,rej)=>{const el=document.createElement('script');el.src=src;el.onload=res;el.onerror=rej;document.head.appendChild(el);});}
+function setSync(msg){$('syncMsg').textContent=msg;}
+function hhmm(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function renderSync(){
+  const r=$('syncRow');
+  if(!me){r.innerHTML='<button class="btn primary" id="signInBtn" type="button">用 Google 帳號登入</button>';
+    $('signInBtn').onclick=signIn;setSync('登入後，電腦和手機會用同一份班表。');}
+  else{r.innerHTML='<span class="pill"><span class="dot" style="color:var(--accent)"></span>'+esc(me.email||'已登入')+'</span><button class="btn" id="signOutBtn" type="button">登出</button>';
+    $('signOutBtn').onclick=()=>fbAuth.signOut();}
+}
+function signIn(){
+  const pv=new firebase.auth.GoogleAuthProvider();
+  fbAuth.signInWithPopup(pv).catch(e=>{
+    if(['auth/popup-blocked','auth/operation-not-supported-in-this-environment','auth/cancelled-popup-request'].includes(e.code))fbAuth.signInWithRedirect(pv);
+    else if(e.code!=='auth/popup-closed-by-user')setSync('登入失敗：'+(e.code||e.message));
+  });
+}
+function editing(){const a=document.activeElement;return a&&a.closest&&a.closest('#rgrid')&&/^(INPUT|SELECT)$/.test(a.tagName);}
+function applyRemote(json){
+  if(editing()){pendingRemote=json;return;}
+  pendingRemote=null;
+  try{S=migrate(JSON.parse(json));}catch(e){return;}
+  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+  renderAll();setSync('已同步 '+hhmm());
+}
+document.addEventListener('focusout',()=>{setTimeout(()=>{if(pendingRemote&&!editing())applyRemote(pendingRemote);},0);});
+function push(){
+  if(!docRef)return Promise.resolve();
+  return docRef.set({state:JSON.stringify(S),client:CLIENT,updatedAt:firebase.firestore.FieldValue.serverTimestamp()})
+    .then(()=>setSync('已同步 '+hhmm())).catch(e=>setSync('同步失敗：'+(e.code||e.message)));
+}
+onSaved=()=>{if(!docRef)return;setSync('同步中…');clearTimeout(pushT);pushT=setTimeout(push,800);};
+async function initSync(){
+  if(!FIREBASE_CONFIG)return;
+  $('syncBox').hidden=false;setSync('連線中…');
+  const base='https://www.gstatic.com/firebasejs/10.12.2/';
+  try{for(const f of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'])await loadScript(base+f);}
+  catch(e){setSync('這個頁面連不到雲端，請改用 GitHub Pages 網址開啟。');return;}
+  firebase.initializeApp(FIREBASE_CONFIG);
+  fbAuth=firebase.auth();const fs=firebase.firestore();
+  fbAuth.getRedirectResult().catch(e=>setSync('登入失敗：'+(e.code||e.message)));
+  fbAuth.onAuthStateChanged(async u=>{
+    me=u;if(unsub){unsub();unsub=null;}docRef=null;renderSync();
+    if(!u)return;
+    setSync('同步中…');
+    const ref=fs.collection('rosters').doc(u.uid);
+    try{
+      const snap=await ref.get();
+      docRef=ref;
+      if(snap.exists&&snap.data().state)applyRemote(snap.data().state);else await push();
+      unsub=ref.onSnapshot(sn=>{if(sn.metadata.hasPendingWrites)return;const d=sn.data();if(!d||d.client===CLIENT||!d.state)return;applyRemote(d.state);});
+    }catch(e){setSync('同步失敗：'+(e.code||e.message));}
+  });
+}
+initSync();
 })();
 </script>
 
