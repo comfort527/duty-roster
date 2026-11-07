@@ -207,6 +207,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .tools{min-width:0}
 .roster tfoot th{white-space:nowrap}
 .mshort{display:none}
+.brush .ls{display:none}
 .note-row{display:none}
 .syncform{display:grid;gap:6px}
 .syncform label{font-size:12px;color:var(--muted)}
@@ -226,10 +227,14 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .monthnav{gap:2px}
   .ibtn{width:30px;height:30px}
   /* brushes: one swipeable row */
-  .brushbar{flex-wrap:nowrap;overflow-x:auto;width:100%;gap:12px;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .brushbar{flex-direction:column;align-items:stretch;flex-wrap:nowrap;width:100%;gap:6px}
   .brushbar::-webkit-scrollbar{display:none}
-  .brushbar .group{flex-wrap:nowrap;flex:none;gap:5px}
-  .brush{min-width:38px;height:32px;padding:0 4px}
+  .brushbar .group{flex-wrap:nowrap;gap:4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .brushbar .group::-webkit-scrollbar{display:none}
+  .brushbar .glabel{flex:none;width:2.2em}
+  .brush .lf{display:none}
+  .brush .ls{display:flex;width:26px;height:22px;font-family:var(--font-body);font-size:12px;font-weight:700;text-decoration:none}
+  .brush{min-width:34px;height:32px;padding:0 3px;flex:none}
   .brush .txt{font-size:11px;padding:0 2px;white-space:nowrap}
   .pill{padding:4px 10px;font-size:12px}
   /* roster: fit all people on screen */
@@ -367,6 +372,7 @@ const LEAVES=[
 ];
 LEAVES.forEach(l=>{if(!CM[l.k])CM[l.k]={k:l.k,cls:l.cls,d:l.n};});
 const LM=Object.fromEntries(LEAVES.map(l=>[l.k,l]));
+const ABBR={rest:'休',comp:'補',other:'其',stop:'停',train:'專',work:'無'}; // 手機版假別縮寫
 const isOff=c=>!!(LM[c]&&LM[c].off);
 const YT=[
   {k:'rest',n:'休假'},{k:'comp',n:'補休24時'},{k:'other',n:'其他假'},
@@ -442,7 +448,7 @@ function renderBrushes(){
     b.onclick=()=>{brush=it.k;renderBrushes();};g.appendChild(b);});
   const lg=$('lbrushes');lg.querySelectorAll('button').forEach(b=>b.remove());
   LEAVES.forEach(l=>{const b=document.createElement('button');b.type='button';b.className='brush';
-    b.innerHTML='<span class="yd t-'+l.t+' yd-sw" aria-hidden="true"></span><span class="txt">'+l.n+'</span>';
+    b.innerHTML='<span class="yd t-'+l.t+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+l.n+'</span><span class="yd t-'+l.t+' ls" aria-hidden="true">'+ABBR[l.t]+'</span>';b.setAttribute('aria-label',l.n);
     b.setAttribute('aria-pressed',brush===l.k);b.title='畫筆：'+l.n;
     b.onclick=()=>{brush=l.k;renderBrushes();};lg.appendChild(b);});
 }
@@ -556,7 +562,7 @@ function yType(y,m,d){
 function renderYBrushes(){
   const g=$('ybrushes');g.querySelectorAll('button').forEach(b=>b.remove());
   YT.concat([{k:'auto',n:'自動'}]).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='brush';
-    b.innerHTML=t.k==='auto'?'<span class="txt">自動</span>':'<span class="yd t-'+t.k+' yd-sw" aria-hidden="true"></span><span class="txt">'+t.n+'</span>';
+    b.innerHTML=t.k==='auto'?'<span class="txt">自動</span>':'<span class="yd t-'+t.k+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+t.n+'</span><span class="yd t-'+t.k+' ls" aria-hidden="true">'+ABBR[t.k]+'</span>';if(t.k!=='auto'){b.setAttribute('aria-label',t.n);b.title=t.n;}
     b.setAttribute('aria-pressed',ybrush===t.k);b.onclick=()=>{ybrush=t.k;renderYBrushes();};g.appendChild(b);});
 }
 function renderYearSel(){$('meSel').innerHTML=S.people.map((n,p)=>'<option value="'+p+'"'+(p===S.me?' selected':'')+'>'+esc(n)+'</option>').join('');}
