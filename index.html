@@ -447,7 +447,7 @@ function renderBrushes(){
     b.setAttribute('aria-pressed',brush===it.k);b.title=it.k==='erase'?'清除格子':it.k==='select'?'只選取，不修改（貼上用）':'畫筆：'+it.k;
     b.onclick=()=>{brush=it.k;renderBrushes();};g.appendChild(b);});
   const lg=$('lbrushes');lg.querySelectorAll('button').forEach(b=>b.remove());
-  LEAVES.forEach(l=>{const b=document.createElement('button');b.type='button';b.className='brush';
+  LEAVES.filter(l=>l.t!=='work').forEach(l=>{const b=document.createElement('button');b.type='button';b.className='brush';
     b.innerHTML='<span class="yd t-'+l.t+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+l.n+'</span><span class="yd t-'+l.t+' ls" aria-hidden="true">'+ABBR[l.t]+'</span>';b.setAttribute('aria-label',l.n);
     b.setAttribute('aria-pressed',brush===l.k);b.title='畫筆：'+l.n;
     b.onclick=()=>{brush=l.k;renderBrushes();};lg.appendChild(b);});
@@ -561,7 +561,7 @@ function yType(y,m,d){
 }
 function renderYBrushes(){
   const g=$('ybrushes');g.querySelectorAll('button').forEach(b=>b.remove());
-  YT.concat([{k:'auto',n:'自動'}]).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='brush';
+  YT.filter(t=>t.k!=='work').concat([{k:'auto',n:'自動'}]).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='brush';
     b.innerHTML=t.k==='auto'?'<span class="txt">自動</span>':'<span class="yd t-'+t.k+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+t.n+'</span><span class="yd t-'+t.k+' ls" aria-hidden="true">'+ABBR[t.k]+'</span>';if(t.k!=='auto'){b.setAttribute('aria-label',t.n);b.title=t.n;}
     b.setAttribute('aria-pressed',ybrush===t.k);b.onclick=()=>{ybrush=t.k;renderYBrushes();};g.appendChild(b);});
 }
