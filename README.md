@@ -9,11 +9,11 @@
 
 ## 電腦、手機同步
 
-班表可以存成**私人 repo** 裡的 `data.json`，各裝置每 30 秒、或切回頁面時自動同步。
+班表存在本 repo 的 `data` 分支（`data.json`），不會觸發網頁重新部署。
 
-1. 建一個**私人** repo，例如 `comfort527/duty-roster-data`（勾選 Add a README）。
-2. 到 GitHub → Settings → Developer settings → Fine-grained tokens 建立 Token：
-   只授權 `duty-roster-data` 這個 repo，權限 **Contents: Read and write**。
-3. 用 GitHub Pages 網址開啟網頁，在「雲端同步」按「設定 GitHub 同步」，填入 repo 與 Token。每台裝置設定一次。
+- **沒有 Token 的裝置**：自動以唯讀方式載入 GitHub 上的班表，每分鐘更新。
+- **要修改並上傳**：到 GitHub → Settings → Developer settings → Fine-grained tokens 建立 Token，
+  只授權 `duty-roster` 這個 repo，權限 **Contents: Read and write**；
+  在網頁「雲端同步」按「設定 GitHub 同步」貼上 Token。每台裝置設定一次。
 
-Token 只存在各裝置的瀏覽器，不會寫進網頁或 repo。
+修改 3 秒後自動上傳，其他裝置每 30 秒或切回頁面時同步。Token 只存在各裝置的瀏覽器。

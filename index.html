@@ -140,7 +140,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .nm{width:66px;border:0;border-bottom:1px dashed var(--line-strong);background:transparent;text-align:center;font-weight:700;font-size:13px;padding:2px 0}
 .nm.me{color:var(--accent)}
 .offsel{margin-top:6px;width:66px;font-size:11px;font-family:var(--font-data);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:1px 2px}
-.c-note{min-width:136px;text-align:left!important}
+.c-note{min-width:109px;text-align:left!important}
 .roster thead .c-note{text-align:left;font-size:12px;color:var(--muted);font-weight:500}
 .note-in{width:100%;height:33px;border:0;background:transparent;padding:0 8px;font-size:13px}
 .note-in:focus{outline:2px solid var(--sel);outline-offset:-2px;background:var(--surface)}
@@ -238,7 +238,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .roster thead th{padding:6px 1px 4px;top:env(safe-area-inset-top,0px)}
   .roster .c-date{width:36px;padding:0 2px}
   .roster tfoot th,.roster tfoot td{bottom:env(safe-area-inset-bottom,0px)}
-  .roster thead th:not(.c-date):not(.c-note){width:38px}
+  .roster thead th:not(.c-date):not(.c-note){width:39.5px}
   .c-note{min-width:0;padding:0 3px!important;cursor:pointer}
   .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2}
   .c-note .note-in{display:none}
@@ -312,7 +312,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <div class="group" id="syncRow"></div>
         <form id="syncForm" class="syncform" hidden>
           <label for="ghRepo">資料 repo</label>
-          <input id="ghRepo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="comfort527/duty-roster-data">
+          <input id="ghRepo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="comfort527/duty-roster">
           <label for="ghToken">Token</label>
           <input id="ghToken" type="password" autocomplete="off" placeholder="github_pat_…">
           <div class="group"><button class="btn primary" type="submit">儲存並同步</button><button class="btn" type="button" id="ghOff">停用同步</button></div>
@@ -616,7 +616,8 @@ renderAll();
 
 /* ---------- 雲端同步（GitHub：把班表存成私人 repo 裡的 data.json） ---------- */
 const GHK='duty-roster-gh';            // 每台裝置各自記住 repo 與 token（只存在本機瀏覽器）
-const DATA_PATH='data.json';
+const DATA_PATH='data.json',DATA_BRANCH='data',PUBLIC_REPO='comfort527/duty-roster'; // 資料放在獨立的 data 分支，不會觸發網頁重新部署
+let pubText=null;
 const CLIENT=Math.random().toString(36).slice(2);
 let gh=null,ghSha=null,ghEtag=null,pushT=null,pushing=false,pendingRemote=null,pollT=null;
 try{gh=JSON.parse(localStorage.getItem(GHK)||'null');}catch(e){gh=null;}
@@ -625,7 +626,7 @@ function hhmm(){const d=new Date();return String(d.getHours()).padStart(2,'0')+'
 function b64enc(str){const b=new TextEncoder().encode(str);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s);}
 function b64dec(b64){const bin=atob(b64.replace(/\s/g,''));const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder().decode(u);}
 function api(method,body,extra){
-  return fetch('https://api.github.com/repos/'+gh.repo+'/contents/'+DATA_PATH,{method,cache:'no-store',
+  return fetch('https://api.github.com/repos/'+gh.repo+'/contents/'+DATA_PATH+(method==='GET'?'?ref='+DATA_BRANCH:''),{method,cache:'no-store',
     headers:Object.assign({'Authorization':'Bearer '+gh.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},body?{'Content-Type':'application/json'}:{},extra||{}),
     body:body?JSON.stringify(body):undefined});
 }
@@ -635,9 +636,9 @@ function renderSync(){
   $('syncRow').innerHTML=on
     ?'<span class="pill"><span class="dot" style="color:var(--accent)"></span>'+esc(gh.repo)+'</span><button class="btn" id="syncNow" type="button">立即同步</button><button class="btn" id="syncEdit" type="button">設定</button>'
     :'<button class="btn primary" id="syncEdit" type="button">設定 GitHub 同步</button>';
-  $('syncEdit').onclick=()=>{const f=$('syncForm');f.hidden=!f.hidden;if(!f.hidden){$('ghRepo').value=(gh&&gh.repo)||'comfort527/duty-roster-data';$('ghToken').value=(gh&&gh.token)||'';}};
+  $('syncEdit').onclick=()=>{const f=$('syncForm');f.hidden=!f.hidden;if(!f.hidden){$('ghRepo').value=(gh&&gh.repo)||PUBLIC_REPO;$('ghToken').value=(gh&&gh.token)||'';}};
   if(on)$('syncNow').onclick=()=>pull(true);
-  if(!on)setSync('尚未設定，資料只存在這台裝置。');
+  if(!on)setSync('唯讀：顯示 GitHub 上的班表。設定 Token 後才能把修改上傳。');
 }
 function editing(){const a=document.activeElement;return a&&a.closest&&a.closest('#rgrid')&&/^(INPUT|SELECT)$/.test(a.tagName);}
 function applyRemote(json){
@@ -663,7 +664,7 @@ async function pull(force){
 async function push(){
   if(!gh)return;pushing=true;pushT=null;setSync('同步中…');
   const body=()=>({message:'更新班表 '+new Date().toLocaleString('zh-TW',{hour12:false}),
-    content:b64enc(JSON.stringify({updatedAt:new Date().toISOString(),client:CLIENT,state:S})),sha:ghSha||undefined});
+    content:b64enc(JSON.stringify({updatedAt:new Date().toISOString(),client:CLIENT,state:S})),sha:ghSha||undefined,branch:DATA_BRANCH});
   try{
     let r=await api('PUT',body());
     if(r.status===409||r.status===422){        // 別台剛更新過：取得最新版本號後，以這次的修改覆蓋
@@ -674,18 +675,27 @@ async function push(){
   }catch(e){setSync('連不到 GitHub，修改先存在這台裝置，連線後會再上傳。',true);pushT=setTimeout(push,15000);}
   pushing=false;
 }
-onSaved=()=>{if(!gh)return;setSync('等待上傳…');clearTimeout(pushT);pushT=setTimeout(push,3000);};
+onSaved=()=>{if(!gh){setSync('這台還沒設定 Token，修改只存在本機，之後會被 GitHub 上的版本取代。',true);return;}setSync('等待上傳…');clearTimeout(pushT);pushT=setTimeout(push,3000);};
 $('syncForm').addEventListener('submit',e=>{e.preventDefault();
   const repo=$('ghRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/$/,''),token=$('ghToken').value.trim();
-  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){setSync('請填 repo（例如 comfort527/duty-roster-data）和 Token。',true);return;}
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){setSync('請填 repo（例如 comfort527/duty-roster）和 Token。',true);return;}
   gh={repo,token};ghSha=null;ghEtag=null;try{localStorage.setItem(GHK,JSON.stringify(gh));}catch(err){}
   $('syncForm').hidden=true;renderSync();startSync();});
-$('ghOff').onclick=()=>{gh=null;try{localStorage.removeItem(GHK);}catch(e){}clearInterval(pollT);$('syncForm').hidden=true;renderSync();};
+$('ghOff').onclick=()=>{gh=null;try{localStorage.removeItem(GHK);}catch(e){}clearInterval(pollT);$('syncForm').hidden=true;renderSync();startSync();};
 function startSync(){
-  clearInterval(pollT);if(!gh)return;pull(true);
+  clearInterval(pollT);
+  if(!gh){pullPublic();pollT=setInterval(()=>{if(document.visibilityState==='visible')pullPublic();},60000);return;}
+  pull(true);
   pollT=setInterval(()=>{if(document.visibilityState==='visible')pull(false);},30000);
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&gh)pull(false);});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;if(gh)pull(false);else pullPublic();});
+// 沒有 Token 的裝置：從公開網址讀取（唯讀）
+async function pullPublic(){
+  if(gh)return;
+  try{const r=await fetch('https://raw.githubusercontent.com/'+PUBLIC_REPO+'/'+DATA_BRANCH+'/'+DATA_PATH+'?t='+Date.now(),{cache:'no-store'});
+    if(!r.ok)return;const t=await r.text();if(t!==pubText){pubText=t;applyRemote(t);}setSync('唯讀：已載入 GitHub 上的班表 '+hhmm()+'。設定 Token 後才能上傳修改。');}
+  catch(e){}
+}
 renderSync();startSync();
 })();
 </script>
