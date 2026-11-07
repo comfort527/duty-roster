@@ -207,6 +207,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .tools{min-width:0}
 .roster tfoot th{white-space:nowrap}
 .mshort{display:none}
+.note-row{display:none}
 
 /* phone layout */
 @media (max-width:640px){
@@ -228,24 +229,32 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .brush .txt{font-size:11px;padding:0 2px;white-space:nowrap}
   .pill{padding:4px 10px;font-size:12px}
   /* roster: fit all people on screen */
-  .gridwrap{max-height:75vh;max-height:calc(100dvh - 190px);min-height:340px}
-  .roster thead th{padding:6px 1px 4px}
-  .roster .c-date{padding:0 4px}
+  .gridwrap{max-height:none;overflow:visible;border-radius:0;touch-action:pan-y}
+  .roster{width:100%;table-layout:fixed}
+  .roster thead th{padding:6px 1px 4px;top:env(safe-area-inset-top,0px)}
+  .roster .c-date{width:46px;padding:0 3px}
+  .roster tbody th.c-date::after{content:"✎";font-size:9px;color:var(--muted);margin-left:1px;vertical-align:top}
+  .roster tfoot th,.roster tfoot td{bottom:env(safe-area-inset-bottom,0px)}
+  .c-note{display:none}
+  .note-row.has,.note-row.open{display:table-row}
+  .note-row td{padding:0!important;background:var(--bg)!important;text-align:left!important}
+  .note-in.m{height:30px;font-size:16px;padding:0 10px}
+  .note-in.m::placeholder{color:var(--muted)}
   .dn{min-width:1.3em;font-size:13px}
   .dw{margin-left:1px;font-size:10px}
-  td.cell{width:44px;min-width:44px;height:32px}
+  td.cell{width:auto;min-width:0;height:32px}
   .chip{min-width:28px;height:22px;padding:0 3px;font-size:12px}
   .k-off{font-size:14px}
-  .nm{width:42px;font-size:12px}
-  .offsel{width:42px;font-size:10px;padding:0}
-  .c-note{min-width:140px}
-  .note-in{height:31px;font-size:16px}
+  .nm{width:100%;font-size:12px}
+  .offsel{width:100%;font-size:10px;padding:0}
   .roster tfoot th,.roster tfoot td{height:28px;font-size:12px}
-  .roster tfoot tr:first-child th,.roster tfoot tr:first-child td{bottom:28px}
+  .roster tfoot tr:first-child th,.roster tfoot tr:first-child td{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
   .panel{padding:12px;gap:12px}
   /* year */
   .mfull{display:none}.mshort{display:inline}
-  .ywrap{padding:0 4px 6px}
+  .ywrap{padding:0 4px 6px;overflow:visible;max-height:none;touch-action:pan-y}
+  .year{width:100%}
+  .year thead th{top:env(safe-area-inset-top,0px)}
   .year .wl{width:22px;font-size:11px}
   .yc{width:25px;height:22px}
   .yd{font-size:11px}
@@ -390,11 +399,11 @@ let tt;
 function toast(msg,withUndo){
   const el=$('toast');el.innerHTML='<span>'+esc(msg)+'</span>'+(withUndo&&undo?'<button type="button" id="undoBtn">復原</button>':'');
   el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,5000);
-  const u=$('undoBtn');if(u)u.onclick=()=>{Object.entries(undo).forEach(([k,v])=>{if(v==null)delete S.roster[k];else S.roster[k]=JSON.parse(v);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
+  const u=$('undoBtn');if(u)u.onclick=()=>{S.notes=S.notes||{};Object.entries(undo).forEach(([k,v])=>{if(v.r==null)delete S.roster[k];else S.roster[k]=JSON.parse(v.r);if(v.n==null)delete S.notes[k];else S.notes[k]=JSON.parse(v.n);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
 }
 const fillCount=()=>Math.min(24,Math.max(1,parseInt(S.fillMonths,10)||4));
 function span(){const a=[];for(let i=0;i<fillCount();i++){let m=cur.m+i,y=cur.y;while(m>12){m-=12;y++;}a.push([y,m]);}return a;}
-function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]=S.roster[k]?JSON.stringify(S.roster[k]):null;});}
+function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]={r:S.roster[k]?JSON.stringify(S.roster[k]):null,n:S.notes&&S.notes[k]?JSON.stringify(S.notes[k]):null};});}
 
 /* ---------- roster ---------- */
 const month=()=>{const k=ym(cur.y,cur.m);return S.roster[k]||(S.roster[k]={});};
@@ -431,12 +440,13 @@ function renderRoster(){
   const NT=(S.notes||{})[ym(cur.y,cur.m)]||{};
   for(let d=1;d<=n;d++){
     const w=wdOf(cur.y,cur.m,d),we=w>=5,td=ds(cur.y,cur.m,d)===TODAY;
-    h+='<tr class="'+(we?'we ':'')+(td?'today':'')+'"><th class="c-date" scope="row"><span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
+    h+='<tr data-d="'+d+'" class="'+(we?'we ':'')+(td?'today':'')+'"><th class="c-date" scope="row"><span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
     S.people.forEach((_,p)=>{const c=getC(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
     h+='<td class="c-note"><input class="note-in" id="note-'+d+'" data-d="'+d+'" value="'+esc(NT[d]||'')+'" aria-label="'+cur.m+'/'+d+' 勤務註記"></td></tr>';
+    h+='<tr class="note-row'+(NT[d]?' has':'')+'" id="nr-'+d+'"><td colspan="'+(S.people.length+1)+'"><input class="note-in m" id="mnote-'+d+'" data-d="'+d+'" value="'+esc(NT[d]||'')+'" placeholder="'+cur.m+'/'+d+' 勤務註記" aria-label="'+cur.m+'/'+d+' 勤務註記"></td></tr>';
   }
-  h+='</tbody><tfoot><tr><th scope="row">值班</th>'+S.people.map((_,p)=>'<td id="fd-'+p+'"></td>').join('')+'<td></td></tr>'+
-     '<tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+'<td></td></tr></tfoot>';
+  h+='</tbody><tfoot><tr><th scope="row">值班</th>'+S.people.map((_,p)=>'<td id="fd-'+p+'"></td>').join('')+'<td class="c-note"></td></tr>'+
+     '<tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+'<td class="c-note"></td></tr></tfoot>';
   $('rgrid').innerHTML=h;
   updStats();
 }
@@ -467,7 +477,13 @@ rg.addEventListener('pointerover',e=>{if(!painting)return;const td=e.target.clos
 window.addEventListener('pointerup',()=>{painting=false;ypainting=false;});
 rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-in'))return;
   S.notes=S.notes||{};const k=ym(cur.y,cur.m);const M=S.notes[k]||(S.notes[k]={});
-  if(t.value)M[t.dataset.d]=t.value;else delete M[t.dataset.d];save();});
+  if(t.value)M[t.dataset.d]=t.value;else delete M[t.dataset.d];save();
+  document.querySelectorAll('.note-in[data-d="'+t.dataset.d+'"]').forEach(x=>{if(x!==t)x.value=t.value;});
+  const nr=$('nr-'+t.dataset.d);if(nr)nr.classList.toggle('has',!!t.value);});
+const isPhone=()=>matchMedia('(max-width:640px)').matches;
+rg.addEventListener('click',e=>{const th=e.target.closest('tbody th.c-date');if(!th||!isPhone())return;
+  const d=th.parentElement.dataset.d,nr=$('nr-'+d);if(!nr)return;nr.classList.add('open');const i=$('mnote-'+d);i.focus({preventScroll:true});});
+rg.addEventListener('focusout',e=>{const t=e.target;if(!t.classList.contains('m'))return;const nr=$('nr-'+t.dataset.d);if(nr)nr.classList.remove('open');});
 rg.addEventListener('change',e=>{
   const t=e.target;const p=+t.dataset.p;
   if(t.classList.contains('nm')){S.people[p]=t.value.trim()||('隊員'+(p+1));save();renderYearSel();updStats();}
@@ -485,7 +501,7 @@ function spanLabel(){const a=span();const f=([y,m])=>m+'月';return f(a[0])+'～
 $('fillN').value=fillCount();
 $('fillN').addEventListener('change',e=>{S.fillMonths=fillCount.call(null,S.fillMonths=e.target.value);e.target.value=S.fillMonths;save();});
 $('fillBtn').onclick=()=>{const a=span();snap(a);let k=0;S.people.forEach((_,p)=>{if(S.offsets[p]!=null){a.forEach(([y,m])=>fillPerson(p,y,m));k++;}});save();renderRoster();renderYear();toast('已依輪序填入 '+spanLabel()+'，共 '+k+' 人（「手動」的人不變）',true);};
-$('clearBtn').onclick=()=>{snap();S.roster[ym(cur.y,cur.m)]={};save();renderRoster();toast('已清空本月',true);};
+$('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};if(S.notes)delete S.notes[k];save();renderRoster();renderYear();toast('已清空本月班表與勤務註記',true);};
 $('prevM').onclick=()=>{cur.m--;if(cur.m<1){cur.m=12;cur.y--;}lastCell=null;renderRoster();};
 $('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;renderRoster();};
 
