@@ -80,6 +80,13 @@ button{cursor:pointer}
 .tabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:3px}
 .tabs a{padding:6px 14px;border-radius:6px;text-decoration:none;color:var(--muted);font-weight:500}
 .tabs a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
+.lockbtn{display:inline-flex;align-items:center;gap:6px;height:34px}
+.lockbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.is-locked .brushbar{display:none}
+.is-locked td.cell,.is-locked .yd{cursor:default}
+.is-locked td.cell:hover{box-shadow:none}
+.is-editing .gridwrap,.is-editing .ywrap{box-shadow:0 0 0 2px var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
 
 main{padding-block:18px 64px;display:grid;gap:16px}
 .note{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:13px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:8px;padding:8px 12px}
@@ -221,12 +228,15 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 @media (max-width:640px){
   .top .wrap{padding-block:8px;gap:8px}
   .brand h1{font-size:19px}
-  .tabs a{padding:5px 11px;font-size:13px}
+  .tabs a{padding:5px 8px;font-size:13px}
+  .tabs{padding:2px}
+  .lockbtn{width:34px;height:32px;padding:0;justify-content:center;margin-left:auto}
+  .lockbtn .txt{display:none}
   main{padding-block:12px 40px;gap:12px}
   #view-roster > div{gap:10px!important}
-  .tools{gap:8px}
+  .tools{gap:6px}
   .tools>.brushbar{flex:1 1 100%}
-  .monthnav output{font-size:15px;min-width:6.6em}
+  .monthnav output{font-size:14px;min-width:6.4em}
   .monthnav{gap:2px}
   .ibtn{width:30px;height:30px}
   /* brushes: one swipeable row */
@@ -290,6 +300,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
           <button class="ibtn" id="nextM" type="button" aria-label="下個月">›</button>
         </div>
         <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
+        <button class="btn lockbtn" type="button" aria-pressed="false"></button>
         <div class="brushbar">
           <div class="group" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
           <div class="group" id="lbrushes" role="toolbar" aria-label="假別畫筆"><span class="glabel">假別</span></div>
@@ -336,6 +347,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <button class="ibtn" id="nextY" type="button" aria-label="下一年">›</button>
       </div>
       <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
+        <button class="btn lockbtn" type="button" aria-pressed="false"></button>
       <div class="group"><label class="glabel" for="meSel">人員</label><select id="meSel" class="btn"></select></div>
       <div class="brushbar"><div class="group" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div></div>
     </div>
@@ -495,7 +507,7 @@ function paintCell(td){
 }
 function selCell(td){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));td.classList.add('sel');lastCell={p:+td.dataset.p,d:+td.dataset.d};}
 const rg=$('rgrid');
-rg.addEventListener('pointerdown',e=>{const td=e.target.closest('td.cell');if(!td)return;
+rg.addEventListener('pointerdown',e=>{if(!editMode)return;const td=e.target.closest('td.cell');if(!td)return;
   if(e.pointerType==='mouse'){painting=true;e.preventDefault();}
   selCell(td);paintCell(td);});
 rg.addEventListener('pointerover',e=>{if(!painting)return;const td=e.target.closest('td.cell');if(td)paintCell(td);});
@@ -530,7 +542,7 @@ $('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;rend
 function norm(v){v=String(v).trim().replace(/値/g,'值').replace(/\s+/g,'');
   if(/^[xX✕×╳]$/.test(v))return'X';v=v.replace(/[○◯Oo]/g,'〇');return RENAME[v]||v;}
 document.addEventListener('paste',e=>{
-  if($('view-roster').hidden||!lastCell)return;
+  if(!editMode||$('view-roster').hidden||!lastCell)return;
   if(e.target.closest&&e.target.closest('input,textarea,select'))return;
   const txt=(e.clipboardData||window.clipboardData).getData('text/plain');if(!txt)return;e.preventDefault();
   snap();const rows=txt.replace(/\r/g,'').split('\n');if(rows[rows.length-1]==='')rows.pop();
@@ -600,7 +612,7 @@ const yg=$('ygrid');
 function ypaint(el){const m=+el.dataset.m,d=+el.dataset.d,key=ds(S.year,m,d);
   if(ybrush==='auto'){if(!S.yearMarks[key])return;delete S.yearMarks[key];}else{if(S.yearMarks[key]===ybrush)return;S.yearMarks[key]=ybrush;}
   save();}
-yg.addEventListener('pointerdown',e=>{const el=e.target.closest('.yd');if(!el)return;if(e.pointerType==='mouse'){ypainting=true;e.preventDefault();}ypaint(el);renderYear();});
+yg.addEventListener('pointerdown',e=>{if(!editMode)return;const el=e.target.closest('.yd');if(!el)return;if(e.pointerType==='mouse'){ypainting=true;e.preventDefault();}ypaint(el);renderYear();});
 yg.addEventListener('pointerover',e=>{if(!ypainting)return;const el=e.target.closest('.yd');if(!el)return;const before=JSON.stringify(S.yearMarks[ds(S.year,+el.dataset.m,+el.dataset.d)]);ypaint(el);if(before!==JSON.stringify(S.yearMarks[ds(S.year,+el.dataset.m,+el.dataset.d)]))renderYear();});
 $('prevY').onclick=()=>{S.year--;save();renderYear();};
 $('nextY').onclick=()=>{S.year++;save();renderYear();};
@@ -612,6 +624,27 @@ function route(){
   document.querySelectorAll('[data-tab]').forEach(a=>{if(a.dataset.tab===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   if(v==='year')renderYear();
 }
+
+/* ---------- 鎖定／編輯模式：預設鎖定，按「開始編輯」才能修改 ---------- */
+let editMode=false;
+const ICON_LOCK='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>';
+const ICON_OPEN='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" fill="currentColor"/><path d="M8 11V8a4 4 0 0 1 7.7-1.5" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>';
+function applyLock(){
+  const L=!editMode;
+  document.documentElement.classList.toggle('is-locked',L);
+  document.documentElement.classList.toggle('is-editing',!L);
+  document.querySelectorAll('#rgrid .nm,#rgrid .note-in,#tgt,#ann').forEach(el=>{el.readOnly=L;});
+  document.querySelectorAll('#rgrid .offsel,#fillBtn,#clearBtn,#fillN,#seq button,#seqAdd button').forEach(el=>{el.disabled=L;});
+  document.querySelectorAll('.lockbtn').forEach(b=>{b.setAttribute('aria-pressed',String(!L));
+    b.innerHTML=(L?ICON_LOCK:ICON_OPEN)+'<span class="txt">'+(L?'開始編輯':'完成編輯')+'</span>';
+    b.setAttribute('aria-label',L?'目前鎖定，按一下開始編輯':'編輯中，按一下鎖定');b.title=L?'開始編輯':'完成編輯並鎖定';});
+  if(L){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));lastCell=null;
+    const a=document.activeElement;if(a&&a.closest&&a.closest('#rgrid,#ystats'))a.blur();}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('.lockbtn');if(!b)return;editMode=!editMode;applyLock();
+  toast(editMode?'已開始編輯':'已鎖定，班表不會被誤觸修改');});
+{const r1=renderRoster,r2=renderYear,r3=renderSeq;
+ renderRoster=function(){r1();applyLock();};renderYear=function(){r2();applyLock();};renderSeq=function(){r3();applyLock();};}
 function renderAll(){renderBrushes();renderSeq();renderRoster();renderYearSel();renderYBrushes();renderYear();route();}
 window.addEventListener('hashchange',route);
 renderAll();
