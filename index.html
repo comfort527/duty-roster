@@ -82,7 +82,12 @@ button{cursor:pointer}
 .tabs a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .lockbtn{display:inline-flex;align-items:center;gap:6px;height:34px}
 .lockbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.is-locked .brushbar{display:none}
+.is-locked #brushes,.is-locked #ybrushes,.is-locked #lbrushes .brush:not(.frame-brush){display:none}
+td.cell.f-r{outline:2.5px solid var(--alert);outline-offset:-3px}
+td.cell.f-k{outline:2.5px solid var(--ink);outline-offset:-3px}
+.fsw{display:inline-block;width:22px;height:18px;border-radius:3px;border:2.5px solid var(--ink);background:transparent}
+.fsw.r{border-color:var(--alert)}
+.frame-brush{margin-left:4px}
 .is-locked td.cell,.is-locked .yd{cursor:default}
 .is-locked td.cell:hover{box-shadow:none}
 .is-editing .gridwrap,.is-editing .ywrap{box-shadow:0 0 0 2px var(--accent)}
@@ -439,11 +444,16 @@ let tt;
 function toast(msg,withUndo){
   const el=$('toast');el.innerHTML='<span>'+esc(msg)+'</span>'+(withUndo&&undo?'<button type="button" id="undoBtn">復原</button>':'');
   el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,5000);
-  const u=$('undoBtn');if(u)u.onclick=()=>{S.notes=S.notes||{};Object.entries(undo).forEach(([k,v])=>{if(v.r==null)delete S.roster[k];else S.roster[k]=JSON.parse(v.r);if(v.n==null)delete S.notes[k];else S.notes[k]=JSON.parse(v.n);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
+  const u=$('undoBtn');if(u)u.onclick=()=>{S.notes=S.notes||{};Object.entries(undo).forEach(([k,v])=>{if(v.r==null)delete S.roster[k];else S.roster[k]=JSON.parse(v.r);if(v.n==null)delete S.notes[k];else S.notes[k]=JSON.parse(v.n);S.frames=S.frames||{};if(v.f==null)delete S.frames[k];else S.frames[k]=JSON.parse(v.f);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
 }
 const fillCount=()=>Math.min(24,Math.max(1,parseInt(S.fillMonths,10)||4));
 function span(){const a=[];for(let i=0;i<fillCount();i++){let m=cur.m+i,y=cur.y;while(m>12){m-=12;y++;}a.push([y,m]);}return a;}
-function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]={r:S.roster[k]?JSON.stringify(S.roster[k]):null,n:S.notes&&S.notes[k]?JSON.stringify(S.notes[k]):null};});}
+function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]={r:S.roster[k]?JSON.stringify(S.roster[k]):null,n:S.notes&&S.notes[k]?JSON.stringify(S.notes[k]):null,f:S.frames&&S.frames[k]?JSON.stringify(S.frames[k]):null};});}
+/* 紅框／黑框標記：獨立於班別，鎖定時也能用 */
+const isFrame=b=>typeof b==='string'&&b.startsWith('F:');
+const getF=(p,d)=>(((S.frames||{})[ym(cur.y,cur.m)]||{})[p]||{})[d]||'';
+function setF(p,d,c){S.frames=S.frames||{};const k=ym(cur.y,cur.m);const M=S.frames[k]||(S.frames[k]={});M[p]=M[p]||{};if(c)M[p][d]=c;else delete M[p][d];}
+let frameMode='add';
 
 /* ---------- roster ---------- */
 const month=()=>{const k=ym(cur.y,cur.m);return S.roster[k]||(S.roster[k]={});};
@@ -464,6 +474,9 @@ function renderBrushes(){
     b.innerHTML='<span class="yd t-'+l.t+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+l.n+'</span><span class="yd t-'+l.t+' ls" aria-hidden="true">'+ABBR[l.t]+'</span>';b.setAttribute('aria-label',l.n);
     b.setAttribute('aria-pressed',brush===l.k);b.title='畫筆：'+l.n;
     b.onclick=()=>{brush=l.k;renderBrushes();};lg.appendChild(b);});
+  [['F:r','r','紅框'],['F:k','k','黑框']].forEach(([k,c,n])=>{const b=document.createElement('button');b.type='button';b.className='brush frame-brush';
+    b.innerHTML='<span class="fsw '+c+'" aria-hidden="true"></span><span class="txt lf">'+n+'</span>';b.setAttribute('aria-label',n+'（鎖定時也能標記）');b.title=n+'：點格子加上或取消，鎖定時也能用';
+    b.setAttribute('aria-pressed',brush===k);b.onclick=()=>{brush=k;renderBrushes();};lg.appendChild(b);});
 }
 
 function renderRoster(){
@@ -481,7 +494,7 @@ function renderRoster(){
   for(let d=1;d<=n;d++){
     const w=wdOf(cur.y,cur.m,d),we=w>=5,td=ds(cur.y,cur.m,d)===TODAY;
     h+='<tr data-d="'+d+'" class="'+(we?'we ':'')+(td?'today':'')+'"><th class="c-date" scope="row"><span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
-    S.people.forEach((_,p)=>{const c=getC(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
+    S.people.forEach((_,p)=>{const c=getC(p,d);const F=getF(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
     h+='<td class="c-note"><textarea class="note-in" id="note-'+d+'" data-d="'+d+'" rows="2" aria-label="'+cur.m+'/'+d+' 勤務註記">'+esc(NT[d]||'')+'</textarea></td></tr>';
   }
   h+='</tbody><tfoot><tr><th scope="row">值班</th>'+S.people.map((_,p)=>'<td id="fd-'+p+'"></td>').join('')+'<td class="c-note"></td></tr>'+
@@ -504,14 +517,18 @@ function updStats(){
 function paintCell(td){
   const p=+td.dataset.p,d=+td.dataset.d;
   if(brush==='select')return;
+  if(isFrame(brush)){const col=brush.slice(2),cf=getF(p,d);
+    if(frameMode==='add'){if(cf===col)return;setF(p,d,col);}else{if(cf!==col)return;setF(p,d,'');}
+    td.classList.remove('f-r','f-k');const nf=getF(p,d);if(nf)td.classList.add('f-'+nf);save();return;}
   const c=brush==='erase'?'':brush;if(getC(p,d)===c)return;
   setC(p,d,c);td.innerHTML=chip(c);td.classList.toggle('is-off',isOff(c));updStats();save();
 }
 function selCell(td){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));td.classList.add('sel');lastCell={p:+td.dataset.p,d:+td.dataset.d};}
 const rg=$('rgrid');
-rg.addEventListener('pointerdown',e=>{if(!editMode)return;const td=e.target.closest('td.cell');if(!td)return;
+rg.addEventListener('pointerdown',e=>{if(!editMode&&!isFrame(brush))return;const td=e.target.closest('td.cell');if(!td)return;
   if(e.pointerType==='mouse'){painting=true;e.preventDefault();}
-  selCell(td);paintCell(td);});
+  if(isFrame(brush)){frameMode=getF(+td.dataset.p,+td.dataset.d)===brush.slice(2)?'remove':'add';}else selCell(td);
+  paintCell(td);});
 rg.addEventListener('pointerover',e=>{if(!painting)return;const td=e.target.closest('td.cell');if(td)paintCell(td);});
 window.addEventListener('pointerup',()=>{painting=false;ypainting=false;});
 rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-in'))return;
@@ -537,7 +554,7 @@ function spanLabel(){const a=span();const f=([y,m])=>m+'月';return f(a[0])+'～
 $('fillN').value=fillCount();
 $('fillN').addEventListener('change',e=>{S.fillMonths=fillCount.call(null,S.fillMonths=e.target.value);e.target.value=S.fillMonths;save();});
 $('fillBtn').onclick=()=>{const a=span();snap(a);let k=0;S.people.forEach((_,p)=>{if(S.offsets[p]!=null){a.forEach(([y,m])=>fillPerson(p,y,m));k++;}});save();renderRoster();renderYear();toast('已依輪序填入 '+spanLabel()+'，共 '+k+' 人（「手動」的人不變）',true);};
-$('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};if(S.notes)delete S.notes[k];save();renderRoster();renderYear();toast('已清空本月班表與勤務註記',true);};
+$('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};if(S.notes)delete S.notes[k];if(S.frames)delete S.frames[k];save();renderRoster();renderYear();toast('已清空本月班表、勤務註記與框線',true);};
 $('prevM').onclick=()=>{cur.m--;if(cur.m<1){cur.m=12;cur.y--;}lastCell=null;renderRoster();};
 $('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;renderRoster();};
 
