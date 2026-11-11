@@ -653,13 +653,13 @@ function applyLock(){
   const L=!editMode;
   document.documentElement.classList.toggle('is-locked',L);
   document.documentElement.classList.toggle('is-editing',!L);
-  document.querySelectorAll('#rgrid .nm,#rgrid .note-in,#tgt,#ann').forEach(el=>{el.readOnly=L;});
+  document.querySelectorAll('#rgrid .nm,#tgt,#ann').forEach(el=>{el.readOnly=L;});  // 勤務註記不受鎖定
   document.querySelectorAll('#rgrid .offsel,#fillBtn,#clearBtn,#fillN,#seq button,#seqAdd button').forEach(el=>{el.disabled=L;});
   document.querySelectorAll('.lockbtn').forEach(b=>{b.setAttribute('aria-pressed',String(!L));
     b.innerHTML=(L?ICON_LOCK:ICON_OPEN)+'<span class="txt">'+(L?'開始編輯':'完成編輯')+'</span>';
     b.setAttribute('aria-label',L?'目前鎖定，按一下開始編輯':'編輯中，按一下鎖定');b.title=L?'開始編輯':'完成編輯並鎖定';});
   if(L){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));lastCell=null;
-    const a=document.activeElement;if(a&&a.closest&&a.closest('#rgrid,#ystats'))a.blur();}
+    const a=document.activeElement;if(a&&a.closest&&a.closest('#rgrid,#ystats')&&!a.classList.contains('note-in'))a.blur();}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('.lockbtn');if(!b)return;editMode=!editMode;applyLock();
   toast(editMode?'已開始編輯':'已鎖定，班表不會被誤觸修改');});
