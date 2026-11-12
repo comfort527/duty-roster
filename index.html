@@ -138,7 +138,7 @@ main{padding-block:18px 64px;display:grid;gap:16px}
 table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
 .roster{min-width:100%}
 .roster th,.roster td{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:0;text-align:center;background:var(--surface)}
-.roster thead th{position:sticky;top:0;z-index:3;padding:8px 6px 6px;vertical-align:bottom}
+.roster thead th{position:sticky;top:0;z-index:3;padding:8px 3px 6px;vertical-align:bottom}
 .roster .c-date{position:sticky;left:0;z-index:2;width:1%;min-width:0;padding:0 6px;text-align:left;white-space:nowrap}
 .roster thead .c-date{z-index:4;font-size:12px;color:var(--muted);font-weight:500}
 .roster tfoot th,.roster tfoot td{position:sticky;bottom:0;z-index:2;background:var(--bg);font-family:var(--font-data);font-size:13px;height:30px}
@@ -150,20 +150,21 @@ table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-num
 .roster tr.we .dn,.roster tr.we .dw{color:var(--wk-ink)}
 .roster tr.we td{background:var(--wk-row)}
 .roster tr.today th.c-date{box-shadow:inset 0 0 0 2px var(--alert)}
-td.cell{width:66px;min-width:58px;height:34px;cursor:pointer;user-select:none;-webkit-user-select:none}
+td.cell{width:60px;min-width:56px;height:34px;cursor:pointer;user-select:none;-webkit-user-select:none}
 td.cell.is-off{background:var(--off-cell)!important}
 td.cell:hover{box-shadow:inset 0 0 0 1px var(--line-strong)}
 td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
-.nm{width:66px;border:0;border-bottom:1px dashed var(--line-strong);background:transparent;text-align:center;font-weight:700;font-size:13px;padding:2px 0}
+.nm{width:60px;border:0;border-bottom:1px dashed var(--line-strong);background:transparent;text-align:center;font-weight:700;font-size:13px;padding:2px 0}
 .nm.me{color:var(--accent)}
-.offsel{margin-top:6px;width:66px;font-size:11px;font-family:var(--font-data);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:1px 2px}
+.offsel{margin-top:6px;width:60px;font-size:11px;font-family:var(--font-data);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:1px 2px}
 .c-note{min-width:109px;text-align:left!important}
 .roster thead .c-note{text-align:left;font-size:12px;color:var(--muted);font-weight:500}
+.notesel{display:none}
 .note-in{display:block;width:100%;height:33px;border:0;background:transparent;padding:7px 8px 0;font:inherit;font-size:13px;line-height:1.3;resize:none;overflow:hidden;color:inherit}
 .note-in:focus{outline:2px solid var(--sel);outline-offset:-2px;background:var(--surface)}
 
 /* side panel */
-.split{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;align-items:start}
 @media (max-width:900px){.split{grid-template-columns:minmax(0,1fr)}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:14px;min-width:0}
 .panel h2{font-size:13px;letter-spacing:.1em;color:var(--muted);margin:0;font-weight:500}
@@ -266,7 +267,10 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .roster tfoot th,.roster tfoot td{bottom:env(safe-area-inset-bottom,0px)}
   .roster thead th:not(.c-date):not(.c-note){width:39.5px}
   .c-note{min-width:0;padding:0 3px!important;cursor:pointer}
-  .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2}
+  .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2;padding:6px 1px 4px!important}
+  .roster[data-nv="0"] .c-note:not(.n0),.roster[data-nv="1"] .c-note:not(.n1),.roster[data-nv="2"] .c-note:not(.n2){display:none}
+  .roster thead .c-note .nlab{display:none}
+  .notesel{display:block;width:100%;font-size:10px;padding:0;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-family:var(--font-body)}
   .c-note{padding:0!important}
   .note-in{height:31px;font-size:11px;line-height:1.25;padding:2px 3px 0;word-break:break-all}
   .dn{min-width:1.25em;font-size:13px}
@@ -437,6 +441,8 @@ function migrate(s){if(!s)return s;const r=c=>RENAME[c]||c;
 let S=migrate(load())||sample();
 let cur={y:now.getFullYear(),m:now.getMonth()+1};
 if(!S.roster[ym(cur.y,cur.m)]){cur={y:2026,m:12};}
+const NOTE_COLS=[{k:'notes',n:'勤務註記',s:'勤務',id:'note'},{k:'notes2',n:'雜務註記1',s:'雜務1',id:'note2'},{k:'notes3',n:'雜務註記2',s:'雜務2',id:'note3'}];
+let noteView=0;try{noteView=Math.min(2,Math.max(0,+localStorage.getItem('duty-roster-nv')||0));}catch(e){}
 let brush='X',ybrush='rest',painting=false,ypainting=false,lastCell=null,undo=null;
 
 /* ---------- toast ---------- */
@@ -444,11 +450,11 @@ let tt;
 function toast(msg,withUndo){
   const el=$('toast');el.innerHTML='<span>'+esc(msg)+'</span>'+(withUndo&&undo?'<button type="button" id="undoBtn">復原</button>':'');
   el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,5000);
-  const u=$('undoBtn');if(u)u.onclick=()=>{S.notes=S.notes||{};Object.entries(undo).forEach(([k,v])=>{if(v.r==null)delete S.roster[k];else S.roster[k]=JSON.parse(v.r);if(v.n==null)delete S.notes[k];else S.notes[k]=JSON.parse(v.n);S.frames=S.frames||{};if(v.f==null)delete S.frames[k];else S.frames[k]=JSON.parse(v.f);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
+  const u=$('undoBtn');if(u)u.onclick=()=>{S.notes=S.notes||{};Object.entries(undo).forEach(([k,v])=>{if(v.r==null)delete S.roster[k];else S.roster[k]=JSON.parse(v.r);const ns=JSON.parse(v.n);NOTE_COLS.forEach((c,i)=>{S[c.k]=S[c.k]||{};if(ns[i]==null)delete S[c.k][k];else S[c.k][k]=ns[i];});S.frames=S.frames||{};if(v.f==null)delete S.frames[k];else S.frames[k]=JSON.parse(v.f);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
 }
 const fillCount=()=>Math.min(24,Math.max(1,parseInt(S.fillMonths,10)||4));
 function span(){const a=[];for(let i=0;i<fillCount();i++){let m=cur.m+i,y=cur.y;while(m>12){m-=12;y++;}a.push([y,m]);}return a;}
-function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]={r:S.roster[k]?JSON.stringify(S.roster[k]):null,n:S.notes&&S.notes[k]?JSON.stringify(S.notes[k]):null,f:S.frames&&S.frames[k]?JSON.stringify(S.frames[k]):null};});}
+function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]={r:S.roster[k]?JSON.stringify(S.roster[k]):null,n:JSON.stringify(NOTE_COLS.map(c=>(S[c.k]||{})[k]||null)),f:S.frames&&S.frames[k]?JSON.stringify(S.frames[k]):null};});}
 /* 紅框／黑框標記：獨立於班別，鎖定時也能用 */
 const isFrame=b=>typeof b==='string'&&b.startsWith('F:');
 const getF=(p,d)=>(((S.frames||{})[ym(cur.y,cur.m)]||{})[p]||{})[d]||'';
@@ -489,17 +495,17 @@ function renderRoster(){
     h+='<th scope="col"><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'" aria-label="第'+(p+1)+'位姓名">'+
        '<select class="offsel" id="off-'+p+'" data-p="'+p+'" aria-label="'+esc(nm)+' 本月1日的輪序">'+o+'</select></th>';
   });
-  h+='<th scope="col" class="c-note">勤務註記</th></tr></thead><tbody>';
-  const NT=(S.notes||{})[ym(cur.y,cur.m)]||{};
+  h+=NOTE_COLS.map((c,i)=>'<th scope="col" class="c-note n'+i+'"><span class="nlab">'+c.n+'</span><select class="notesel" id="nsel-'+i+'" data-n="'+i+'" aria-label="切換註記欄">'+NOTE_COLS.map((o,j)=>'<option value="'+j+'"'+(j===i?' selected':'')+'>'+o.s+'</option>').join('')+'</select></th>').join('')+'</tr></thead><tbody>';
+  const NTS=NOTE_COLS.map(c=>(S[c.k]||{})[ym(cur.y,cur.m)]||{});
   for(let d=1;d<=n;d++){
     const w=wdOf(cur.y,cur.m,d),we=w>=5,td=ds(cur.y,cur.m,d)===TODAY;
     h+='<tr data-d="'+d+'" class="'+(we?'we ':'')+(td?'today':'')+'"><th class="c-date" scope="row"><span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
     S.people.forEach((_,p)=>{const c=getC(p,d);const F=getF(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
-    h+='<td class="c-note"><textarea class="note-in" id="note-'+d+'" data-d="'+d+'" rows="2" aria-label="'+cur.m+'/'+d+' 勤務註記">'+esc(NT[d]||'')+'</textarea></td></tr>';
+    h+=NOTE_COLS.map((c,i)=>'<td class="c-note n'+i+'"><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2" aria-label="'+cur.m+'/'+d+' '+c.n+'">'+esc(NTS[i][d]||'')+'</textarea></td>').join('')+'</tr>';
   }
-  h+='</tbody><tfoot><tr><th scope="row">值班</th>'+S.people.map((_,p)=>'<td id="fd-'+p+'"></td>').join('')+'<td class="c-note"></td></tr>'+
-     '<tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+'<td class="c-note"></td></tr></tfoot>';
-  $('rgrid').innerHTML=h;
+  h+='</tbody><tfoot><tr><th scope="row">值班</th>'+S.people.map((_,p)=>'<td id="fd-'+p+'"></td>').join('')+NOTE_COLS.map((_,i)=>'<td class="c-note n'+i+'"></td>').join('')+'</tr>'+
+     '<tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+NOTE_COLS.map((_,i)=>'<td class="c-note n'+i+'"></td>').join('')+'</tr></tfoot>';
+  $('rgrid').innerHTML=h;$('rgrid').dataset.nv=noteView;
   updStats();
 }
 function updStats(){
@@ -533,11 +539,12 @@ rg.addEventListener('pointerover',e=>{if(!painting)return;const td=e.target.clos
 window.addEventListener('pointerup',()=>{painting=false;ypainting=false;});
 rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-in'))return;
   if(/[\r\n]/.test(t.value))t.value=t.value.replace(/[\r\n]+/g,' ');
-  S.notes=S.notes||{};const k=ym(cur.y,cur.m);const M=S.notes[k]||(S.notes[k]={});
+  const nk=NOTE_COLS[+t.dataset.n||0].k;S[nk]=S[nk]||{};const k=ym(cur.y,cur.m);const M=S[nk][k]||(S[nk][k]={});
   if(t.value)M[t.dataset.d]=t.value;else delete M[t.dataset.d];save();
 });
 rg.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('note-in')){e.preventDefault();e.target.blur();}});
 rg.addEventListener('change',e=>{
+  if(e.target.classList.contains('notesel')){noteView=+e.target.value;try{localStorage.setItem('duty-roster-nv',noteView);}catch(err){}renderRoster();return;}
   const t=e.target;const p=+t.dataset.p;
   if(t.classList.contains('nm')){S.people[p]=t.value.trim()||('隊員'+(p+1));save();renderYearSel();updStats();}
   if(t.classList.contains('offsel')){
@@ -554,7 +561,7 @@ function spanLabel(){const a=span();const f=([y,m])=>m+'月';return f(a[0])+'～
 $('fillN').value=fillCount();
 $('fillN').addEventListener('change',e=>{S.fillMonths=fillCount.call(null,S.fillMonths=e.target.value);e.target.value=S.fillMonths;save();});
 $('fillBtn').onclick=()=>{const a=span();snap(a);let k=0;S.people.forEach((_,p)=>{if(S.offsets[p]!=null){a.forEach(([y,m])=>fillPerson(p,y,m));k++;}});save();renderRoster();renderYear();toast('已依輪序填入 '+spanLabel()+'，共 '+k+' 人（「手動」的人不變）',true);};
-$('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};if(S.notes)delete S.notes[k];if(S.frames)delete S.frames[k];save();renderRoster();renderYear();toast('已清空本月班表、勤務註記與框線',true);};
+$('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};NOTE_COLS.forEach(c=>{if(S[c.k])delete S[c.k][k];});if(S.frames)delete S.frames[k];save();renderRoster();renderYear();toast('已清空本月班表、註記與框線',true);};
 $('prevM').onclick=()=>{cur.m--;if(cur.m<1){cur.m=12;cur.y--;}lastCell=null;renderRoster();};
 $('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;renderRoster();};
 
