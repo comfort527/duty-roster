@@ -20,7 +20,8 @@
   - 做法：非 404 的失敗與例外改為 `console.error` 並 `setSync('唯讀載入失敗…', true)`；404（雲端尚無資料）維持不提示。
   - 驗證：斷網後開啟 GitHub Pages 網址 → 同步燈變紅並顯示原因；TEST_CHECKLIST「唯讀載入」「同步燈」
 
-- [ ] #3【風險：低】GitHub API 回應讀取沒有防缺欄位
+- [x] #3【風險：低】GitHub API 回應讀取沒有防缺欄位
+  - 完成：2026-11-13。`pull`／`push` 改用 `?.`／`??` 讀取並新增 `reportBadResponse`，格式錯誤顯示「回應格式不正確」、斷網才顯示「連不到 GitHub」；實測 5 種異常回應與三裝置同步，截圖與基準一致。
   - 檔案：index.html 第 866、880 行（`pull`、`push`）
   - 問題：直接讀 `j.sha`、`j.content`、`j.content.sha`，回應格式不符時會被外層 catch 接住，卻顯示錯誤的「連不到 GitHub」。
   - 做法：改用 `j?.sha`、`j?.content?.sha ?? null`，缺欄位時顯示「GitHub 回應格式不正確」並 `console.error`。

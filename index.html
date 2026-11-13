@@ -855,6 +855,10 @@ function applyRemote(json){
   renderAll();
 }
 document.addEventListener('focusout',()=>{setTimeout(()=>{if(pendingRemote&&!editing())applyRemote(pendingRemote);},0);});
+function reportBadResponse(step,body){
+  console.error('GitHub '+step+'回應格式不正確',body);
+  setSync('同步失敗：GitHub 回應格式不正確，請稍後按「立即同步」。',true);
+}
 async function pull(force){
   if(!gh||pushing||pushT)return;
   try{
@@ -862,10 +866,17 @@ async function pull(force){
     if(r.status===304){setSync('已同步 '+hhmm());return;}
     if(r.status===404&&!ghSha){await push();return;}   // 雲端還沒有資料：上傳這台的
     if(!r.ok){setSync(errMsg(r.status),true);return;}
-    ghEtag=r.headers.get('ETag');const j=await r.json();
-    if(j.sha!==ghSha){ghSha=j.sha;applyRemote(b64dec(j.content));}
+    ghEtag=r.headers.get('ETag');
+    const j=await r.json().catch(()=>null);
+    const sha=j?.sha??null,content=j?.content??null;
+    if(!sha||!content){ghEtag=null;reportBadResponse('讀取',j);return;}
+    if(sha!==ghSha){ghSha=sha;applyRemote(b64dec(content));}
     setSync('已同步 '+hhmm());
-  }catch(e){setSync('連不到 GitHub。若是在 Claude 預覽頁，請改用 GitHub Pages 網址開啟。',true);}
+  }catch(e){
+    console.error('同步讀取失敗',e);
+    if(e instanceof TypeError)setSync('連不到 GitHub。若是在 Claude 預覽頁，請改用 GitHub Pages 網址開啟。',true);
+    else setSync('同步失敗：GitHub 回應格式不正確，請稍後按「立即同步」。',true);
+  }
 }
 async function push(){
   if(!gh)return;pushing=true;pushT=null;setSync('同步中…');
@@ -874,10 +885,13 @@ async function push(){
   try{
     let r=await api('PUT',body());
     if(r.status===409||r.status===422){        // 別台剛更新過：取得最新版本號後，以這次的修改覆蓋
-      const g=await api('GET');if(g.ok){ghSha=(await g.json()).sha;r=await api('PUT',body());}
+      const g=await api('GET');if(g.ok){const gj=await g.json().catch(()=>null);ghSha=gj?.sha??ghSha;r=await api('PUT',body());}
     }
     if(!r.ok){setSync(errMsg(r.status),true);}
-    else{const j=await r.json();ghSha=j.content.sha;ghEtag=null;setSync('已同步 '+hhmm());}
+    else{
+      const j=await r.json().catch(()=>null);const sha=j?.content?.sha??null;ghEtag=null;
+      if(!sha)reportBadResponse('上傳',j);else{ghSha=sha;setSync('已同步 '+hhmm());}
+    }
   }catch(e){setSync('連不到 GitHub，修改先存在這台裝置，連線後會再上傳。',true);pushT=setTimeout(push,15000);}
   pushing=false;
 }
