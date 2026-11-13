@@ -44,12 +44,12 @@ button{cursor:pointer}
 .todaybtn{height:34px;color:var(--alert);border-color:color-mix(in srgb,var(--alert) 55%,transparent);font-weight:700}
 .synclight{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-family:var(--font-data);font-size:12px;color:var(--muted)}
 .sdot{width:9px;height:9px;border-radius:50%;background:var(--line-strong);flex:none}
-.synclight[data-state="ok"] .sdot{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
-.synclight[data-state="busy"] .sdot{background:var(--busy)}
-.synclight[data-state="err"] .sdot{background:var(--alert)}
-.synclight[data-state="err"]{color:var(--alert)}
-.synclight[data-state="ro"] .sdot{background:transparent;box-shadow:inset 0 0 0 2px var(--accent)}
-@media (prefers-reduced-motion:no-preference){.synclight[data-state="busy"] .sdot{animation:spulse 1s ease-in-out infinite}@keyframes spulse{50%{opacity:.25}}}
+.synclight[data-state="success"] .sdot{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.synclight[data-state="loading"] .sdot{background:var(--busy)}
+.synclight[data-state="error"] .sdot{background:var(--alert)}
+.synclight[data-state="error"]{color:var(--alert)}
+.synclight[data-state="readonly"] .sdot{background:transparent;box-shadow:inset 0 0 0 2px var(--accent)}
+@media (prefers-reduced-motion:no-preference){.synclight[data-state="loading"] .sdot{animation:spulse 1s ease-in-out infinite}@keyframes spulse{50%{opacity:.25}}}
 .bnav{display:none}
 .roster tr.today td{background:color-mix(in srgb,var(--alert) 10%,var(--surface))}
 .roster tr.hol .dn,.roster tr.hol .dw{color:var(--alert)}
@@ -190,6 +190,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .seq .arrow{color:var(--muted);font-size:11px}
 .seq .x{border:1px solid var(--line);background:var(--bg);color:var(--muted);font-size:11px;line-height:1;width:16px;height:16px;border-radius:50%;padding:0;margin-left:1px}
 .hint{font-size:12px;color:var(--muted);margin:0}
+.hint--error{color:var(--alert)}
 .kbd{font-family:var(--font-data);font-size:11px;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:4px;padding:0 4px}
 
 /* year grid */
@@ -341,7 +342,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         </div>
         <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
         <button class="btn todaybtn" id="todayBtn" type="button">今天</button>
-        <button class="synclight" type="button" data-sync data-state="off" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
+        <button class="synclight" type="button" data-sync data-state="idle" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
         <div class="brushbar">
           <div class="group brushbar__group--shift" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
@@ -401,7 +402,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <button class="ibtn" id="nextY" type="button" aria-label="下一年">›</button>
       </div>
       <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
-        <button class="synclight" type="button" data-sync data-state="off" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
+        <button class="synclight" type="button" data-sync data-state="idle" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
       <div class="group"><label class="glabel" for="meSel">人員</label><select id="meSel" class="btn"></select></div>
       <div class="brushbar"><div class="group brushbar__group--year" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div></div>
@@ -812,12 +813,18 @@ const GHK='duty-roster-gh';            // 每台裝置各自記住 repo 與 toke
 const DATA_PATH='data.json',DATA_BRANCH='data',PUBLIC_REPO='comfort527/duty-roster'; // 資料放在獨立的 data 分支，不會觸發網頁重新部署
 let pubText=null;
 const CLIENT=Math.random().toString(36).slice(2);
-let gh=null,ghSha=null,ghEtag=null,pushT=null,pushing=false,pendingRemote=null,pollT=null;
+let gh=null,ghSha=null,ghEtag=null,pushT=null,pendingRemote=null,pollT=null;
 try{gh=JSON.parse(localStorage.getItem(GHK)||'null');}catch(e){gh=null;}
-function setSync(msg,bad){const m=$('syncMsg');m.textContent=msg;m.style.color=bad?'var(--alert)':'';
-  const st=bad?'err':/^已同步/.test(msg)?'ok':/同步中|等待上傳|連線中/.test(msg)?'busy':/^唯讀/.test(msg)?'ro':'off';
-  const tm=st==='ok'?(msg.match(/\d{2}:\d{2}/)||[''])[0]:st==='busy'?'同步中':st==='err'?'失敗':st==='ro'?'唯讀':'本機';
-  document.querySelectorAll('[data-sync]').forEach(b=>{b.dataset.state=st;b.querySelector('.stime').textContent=tm;b.title=msg;b.setAttribute('aria-label','同步狀態：'+msg);});}
+// 同步狀態：同步燈與訊息都由這一個狀態決定
+const SYNC_STATUS={IDLE:'idle',LOADING:'loading',SUCCESS:'success',ERROR:'error',READONLY:'readonly'};
+const SYNC_LIGHT_TEXT={idle:'本機',loading:'同步中',error:'失敗',readonly:'唯讀'};
+let syncStatus=SYNC_STATUS.IDLE;
+function setSync(status,msg){
+  syncStatus=status;
+  const m=$('syncMsg');m.textContent=msg;m.classList.toggle('hint--error',status===SYNC_STATUS.ERROR);
+  const light=status===SYNC_STATUS.SUCCESS?hhmm():SYNC_LIGHT_TEXT[status];
+  document.querySelectorAll('[data-sync]').forEach(b=>{b.dataset.state=status;b.querySelector('.stime').textContent=light;b.title=msg;b.setAttribute('aria-label','同步狀態：'+msg);});
+}
 function hhmm(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function b64enc(str){const b=new TextEncoder().encode(str);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s);}
 function b64dec(b64){const bin=atob(b64.replace(/\s/g,''));const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder().decode(u);}
@@ -834,7 +841,7 @@ function renderSync(){
     :'<button class="btn primary" id="syncEdit" type="button">設定 GitHub 同步</button>';
   $('syncEdit').onclick=()=>{const f=$('syncForm');f.hidden=!f.hidden;if(!f.hidden){$('ghRepo').value=(gh&&gh.repo)||PUBLIC_REPO;$('ghToken').value=(gh&&gh.token)||'';}};
   if(on)$('syncNow').onclick=()=>pull(true);
-  if(!on)setSync('唯讀：顯示 GitHub 上的班表。設定 Token 後才能把修改上傳。');
+  if(!on)setSync(SYNC_STATUS.READONLY,'唯讀：顯示 GitHub 上的班表。設定 Token 後才能把修改上傳。');
 }
 function editing(){const a=document.activeElement;return a&&a.closest&&a.closest('#rgrid')&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);}
 function applyRemote(json){
@@ -848,29 +855,29 @@ function applyRemote(json){
 document.addEventListener('focusout',()=>{setTimeout(()=>{if(pendingRemote&&!editing())applyRemote(pendingRemote);},0);});
 function reportBadResponse(step,body){
   console.error('GitHub '+step+'回應格式不正確',body);
-  setSync('同步失敗：GitHub 回應格式不正確，請稍後按「立即同步」。',true);
+  setSync(SYNC_STATUS.ERROR,'同步失敗：GitHub 回應格式不正確，請稍後按「立即同步」。');
 }
 async function pull(force){
-  if(!gh||pushing||pushT)return;
+  if(!gh||pushT||syncStatus===SYNC_STATUS.LOADING)return;   // 有修改等待上傳或上傳中時，不從雲端拉
   try{
     const r=await api('GET',null,(!force&&ghEtag)?{'If-None-Match':ghEtag}:null);
-    if(r.status===304){setSync('已同步 '+hhmm());return;}
+    if(r.status===304){setSync(SYNC_STATUS.SUCCESS,'已同步 '+hhmm());return;}
     if(r.status===404&&!ghSha){await push();return;}   // 雲端還沒有資料：上傳這台的
-    if(!r.ok){setSync(errMsg(r.status),true);return;}
+    if(!r.ok){setSync(SYNC_STATUS.ERROR,errMsg(r.status));return;}
     ghEtag=r.headers.get('ETag');
     const j=await r.json().catch(()=>null);
     const sha=j?.sha??null,content=j?.content??null;
     if(!sha||!content){ghEtag=null;reportBadResponse('讀取',j);return;}
     if(sha!==ghSha){ghSha=sha;applyRemote(b64dec(content));}
-    setSync('已同步 '+hhmm());
+    setSync(SYNC_STATUS.SUCCESS,'已同步 '+hhmm());
   }catch(e){
     console.error('同步讀取失敗',e);
-    if(e instanceof TypeError)setSync('連不到 GitHub。若是在 Claude 預覽頁，請改用 GitHub Pages 網址開啟。',true);
-    else setSync('同步失敗：GitHub 回應格式不正確，請稍後按「立即同步」。',true);
+    if(e instanceof TypeError)setSync(SYNC_STATUS.ERROR,'連不到 GitHub。若是在 Claude 預覽頁，請改用 GitHub Pages 網址開啟。');
+    else setSync(SYNC_STATUS.ERROR,'同步失敗：GitHub 回應格式不正確，請稍後按「立即同步」。');
   }
 }
 async function push(){
-  if(!gh)return;pushing=true;pushT=null;setSync('同步中…');
+  if(!gh)return;pushT=null;setSync(SYNC_STATUS.LOADING,'同步中…');
   const body=()=>({message:'更新班表 '+new Date().toLocaleString('zh-TW',{hour12:false}),
     content:b64enc(JSON.stringify({updatedAt:new Date().toISOString(),client:CLIENT,state:S})),sha:ghSha||undefined,branch:DATA_BRANCH});
   try{
@@ -878,18 +885,17 @@ async function push(){
     if(r.status===409||r.status===422){        // 別台剛更新過：取得最新版本號後，以這次的修改覆蓋
       const g=await api('GET');if(g.ok){const gj=await g.json().catch(()=>null);ghSha=gj?.sha??ghSha;r=await api('PUT',body());}
     }
-    if(!r.ok){setSync(errMsg(r.status),true);}
+    if(!r.ok){setSync(SYNC_STATUS.ERROR,errMsg(r.status));}
     else{
       const j=await r.json().catch(()=>null);const sha=j?.content?.sha??null;ghEtag=null;
-      if(!sha)reportBadResponse('上傳',j);else{ghSha=sha;setSync('已同步 '+hhmm());}
+      if(!sha)reportBadResponse('上傳',j);else{ghSha=sha;setSync(SYNC_STATUS.SUCCESS,'已同步 '+hhmm());}
     }
-  }catch(e){setSync('連不到 GitHub，修改先存在這台裝置，連線後會再上傳。',true);pushT=setTimeout(push,15000);}
-  pushing=false;
+  }catch(e){setSync(SYNC_STATUS.ERROR,'連不到 GitHub，修改先存在這台裝置，連線後會再上傳。');pushT=setTimeout(push,15000);}
 }
-onSaved=()=>{if(!gh){setSync('這台還沒設定 Token，修改只存在本機，之後會被 GitHub 上的版本取代。',true);return;}setSync('等待上傳…');clearTimeout(pushT);pushT=setTimeout(push,3000);};
+onSaved=()=>{if(!gh){setSync(SYNC_STATUS.ERROR,'這台還沒設定 Token，修改只存在本機，之後會被 GitHub 上的版本取代。');return;}setSync(SYNC_STATUS.LOADING,'等待上傳…');clearTimeout(pushT);pushT=setTimeout(push,3000);};
 $('syncForm').addEventListener('submit',e=>{e.preventDefault();
   const repo=$('ghRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/$/,''),token=$('ghToken').value.trim();
-  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){setSync('請填 repo（例如 comfort527/duty-roster）和 Token。',true);return;}
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){setSync(SYNC_STATUS.ERROR,'請填 repo（例如 comfort527/duty-roster）和 Token。');return;}
   gh={repo,token};ghSha=null;ghEtag=null;writeStorage(GHK,JSON.stringify(gh));
   $('syncForm').hidden=true;renderSync();startSync();});
 $('ghOff').onclick=()=>{gh=null;removeStorage(GHK);clearInterval(pollT);$('syncForm').hidden=true;renderSync();startSync();};
@@ -906,11 +912,11 @@ async function pullPublic(){
   try{const r=await fetch('https://raw.githubusercontent.com/'+PUBLIC_REPO+'/'+DATA_BRANCH+'/'+DATA_PATH+'?t='+Date.now(),{cache:'no-store'});
     if(r.status===404)return;   // 雲端還沒有資料：維持本機班表，不提示
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const t=await r.text();if(t!==pubText){pubText=t;applyRemote(t);}setSync('唯讀：已載入 GitHub 上的班表 '+hhmm()+'。設定 Token 後才能上傳修改。');}
+    const t=await r.text();if(t!==pubText){pubText=t;applyRemote(t);}setSync(SYNC_STATUS.READONLY,'唯讀：已載入 GitHub 上的班表 '+hhmm()+'。設定 Token 後才能上傳修改。');}
   catch(e){
     console.error('唯讀載入失敗',e);
     const why=e instanceof TypeError?'連不到 GitHub':(e?.message??'連不到 GitHub');
-    setSync('唯讀載入失敗（'+why+'），畫面可能不是最新班表；稍後會自動重試。',true);
+    setSync(SYNC_STATUS.ERROR,'唯讀載入失敗（'+why+'），畫面可能不是最新班表；稍後會自動重試。');
   }
 }
 renderSync();startSync();
