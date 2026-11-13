@@ -82,7 +82,8 @@
   - 做法：完成 #9 後逐一評估，能用調整選擇器或 class 解決的就移除；確實需要的列出來問使用者。依賴 #9。
   - 驗證：TEST_CHECKLIST「手機版面」全部、「設定」頁開關
 
-- [ ] #11【風險：中】用 `#id` 寫樣式（20 處）與巢狀超過 3 層（5 處）
+- [x] #11【風險：中】用 `#id` 寫樣式（20 處）與巢狀超過 3 層（5 處）
+  - 完成：2026-11-13。新增 BEM class（`tools--roster`、`tools--year`、`brushbar__group--shift／leave／year`、`panel__section--ops`、`view-roster`），CSS 改用 class（id 保留給 JS）；`#id` 選擇器與超過 3 層的選擇器皆為 0。截圖、鎖定切換、手機固定工具列測試皆正常。
   - 檔案：index.html CSS 第 99、198–212、273、291、298、305、326 行（#id）；第 159、206、262、333 行（巢狀）
   - 問題：`#rtools`、`#lbrushes`、`#opsBar` 等以 id 寫樣式；`.roster tfoot tr:first-child th` 等選擇器過深。
   - 做法：改成 BEM class（例如 `.toolbar--roster`、`.brushbar__group--leave`），一次處理一個區塊。

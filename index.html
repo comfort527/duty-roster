@@ -56,7 +56,7 @@ button{cursor:pointer}
 .roster .hn{display:block;font-size:9px;line-height:1.1;color:var(--alert);max-width:5.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
 .yd.hol::before{content:"";position:absolute;left:1px;top:1px;border-top:6px solid var(--alert);border-right:6px solid transparent;border-top-left-radius:2px}
 .lockbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.is-locked #brushes,.is-locked #ybrushes,.is-locked #lbrushes .brush:not(.frame-brush){display:none}
+.is-locked .brushbar__group--shift,.is-locked .brushbar__group--year,.is-locked .brushbar__group--leave .brush:not(.frame-brush){display:none}
 td.cell.f-r{outline:2.5px solid var(--alert);outline-offset:-3px}
 td.cell.f-k{outline:2.5px solid var(--ink);outline-offset:-3px}
 .fsw{display:inline-block;width:22px;height:18px;border-radius:3px;border:2.5px solid var(--ink);background:transparent}
@@ -116,7 +116,7 @@ table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-num
 .roster .c-date{position:sticky;left:0;z-index:2;width:1%;min-width:0;padding:0 6px;text-align:left;white-space:nowrap}
 .roster thead .c-date{z-index:4;font-size:12px;color:var(--muted);font-weight:500}
 .roster tfoot th,.roster tfoot td{position:sticky;bottom:0;z-index:2;background:var(--bg);font-family:var(--font-data);font-size:13px;height:30px}
-.roster tfoot tr:first-child th,.roster tfoot tr:first-child td{border-top:1px solid var(--line-strong)}
+.roster tfoot th,.roster tfoot td{border-top:1px solid var(--line-strong)}
 .roster tfoot th{left:0;z-index:4;font-family:var(--font-body);font-weight:500;font-size:12px;color:var(--muted);text-align:left;padding:0 8px}
 .dn{font-family:var(--font-data);font-weight:600;display:inline-block;min-width:1.6em}
 .dw{font-size:12px;color:var(--muted);margin-left:4px}
@@ -164,20 +164,20 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .dot--ok{color:var(--accent)}
 .yd.opreview__abbr{display:inline-flex;width:24px;height:20px;border-radius:4px;align-items:center;justify-content:center;font-weight:700}
 .opsbar{margin-left:auto}
-.is-locked #opsBar{display:none}
+.is-locked .opsbar{display:none}
 @media (min-width:641px){
-  #rtools .synclight{margin-left:auto}
-  #rtools .brushbar{flex-basis:100%;gap:10px 18px}
-  .is-editing #rtools .brushbar{background:var(--accent-soft);border-radius:10px;padding:8px 10px}
-  #rtools .brushbar .group{gap:4px}
-  #rtools .brushbar .brush{min-width:34px;padding:0 3px}
-  #rtools .brushbar .chip{min-width:26px}
-  #rtools .brushbar .brush .txt{padding:0 2px}
-  #rtools .brushbar .glabel{margin-right:0}
-  #lbrushes .brush .lf{display:none}
-  #lbrushes .brush .ls{display:flex;width:26px;height:22px;font-family:var(--font-body);font-size:12px;font-weight:700;text-decoration:none}
-  #lbrushes .frame-brush .txt{display:none}
-  #opsHome h2{display:none}
+  .tools--roster .synclight{margin-left:auto}
+  .tools--roster .brushbar{flex-basis:100%;gap:10px 18px}
+  .is-editing .tools--roster .brushbar{background:var(--accent-soft);border-radius:10px;padding:8px 10px}
+  .tools--roster .group{gap:4px}
+  .tools--roster .brush{min-width:34px;padding:0 3px}
+  .tools--roster .chip{min-width:26px}
+  .tools--roster .brush .txt{padding:0 2px}
+  .tools--roster .glabel{margin-right:0}
+  .brushbar__group--leave .brush .lf{display:none}
+  .brushbar__group--leave .brush .ls{display:flex;width:26px;height:22px;font-family:var(--font-body);font-size:12px;font-weight:700;text-decoration:none}
+  .brushbar__group--leave .frame-brush .txt{display:none}
+  .panel .panel__section--ops h2{display:none}
   aside.panel{display:none;position:fixed;z-index:31;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));
     width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;box-shadow:var(--shadow-panel)}
   html.panel-open aside.panel{display:grid}
@@ -228,7 +228,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .yd.today{outline:2px solid var(--today);outline-offset:-1px}
 .year tfoot th{font-size:12px;font-weight:500;color:var(--muted);text-align:right;padding:4px 6px;white-space:nowrap}
 .year tfoot td{font-family:var(--font-data);font-weight:600;font-size:13px;height:26px;border-top:1px solid var(--line)}
-.year tfoot tr.total td{background:var(--accent-soft);color:var(--ink)}
+.year tr.total td{background:var(--accent-soft);color:var(--ink)}
 .year tfoot td.yt{color:var(--accent)}
 .ywrap{overflow:auto;max-height:min(78vh,1180px);border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 8px 8px}
 .yd-sw{width:22px;height:18px;border-radius:3px;display:inline-block}
@@ -239,7 +239,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 @media (prefers-reduced-motion:no-preference){.toast{animation:up .18s ease-out}@keyframes up{from{transform:translate(-50%,8px);opacity:.4}}}
 
 .brushbar{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;min-width:0}
-#view-roster > div,#view-year{grid-template-columns:minmax(0,1fr)}
+.view-roster > .roster-main,.view-year{grid-template-columns:minmax(0,1fr)}
 .tools{min-width:0}
 .roster tfoot th{white-space:nowrap}
 .mshort{display:none}
@@ -257,21 +257,21 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .lockbtn{width:34px;height:32px;padding:0;justify-content:center;margin-left:auto}
   .todaybtn{height:30px;padding:0 8px;font-size:12px}
   .synclight{height:30px;padding:0 7px;font-size:11px;gap:4px}
-  #rtools .tabs,#ytools .tabs{display:none}
+  .tools--roster .tabs,.tools--year .tabs{display:none}
   .bnav{display:grid;grid-template-columns:repeat(3,1fr);position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);
     padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
   .bnav a{display:grid;justify-items:center;gap:1px;font-size:11px;color:var(--muted);text-decoration:none;padding:2px 0}
   .bnav a[aria-current="page"]{color:var(--accent);font-weight:700}
   .bnav svg{width:22px;height:22px}
   .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))}
-  html.view-tools #view-roster{display:none}
+  html.view-tools .view-roster{display:none}
   html:not(.view-tools) aside.panel{display:none}
   .panel-head,.opsbar{display:none}
   .roster .hn{display:none}
 
   .lockbtn .txt{display:none}
   main{padding-block:12px calc(76px + env(safe-area-inset-bottom,0px));gap:12px}
-  #view-roster > div{gap:10px}
+  .roster-main{gap:10px}
   .tools{gap:6px}
   .tools>.brushbar{flex:1 1 100%}
   .monthnav output{font-size:14px;min-width:6.4em}
@@ -292,14 +292,14 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .gridwrap{max-height:none;overflow:visible;border-radius:0;touch-action:pan-y}
   .roster{width:100%;table-layout:fixed}
   .roster thead th{padding:6px 1px 4px;top:calc(env(safe-area-inset-top,0px) + var(--rtoolsH,0px))}
-  #rtools,#ytools{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);margin-inline:-16px;padding:8px 16px 6px;box-shadow:0 1px 0 var(--line)}
+  .tools--roster,.tools--year{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);margin-inline:-16px;padding:8px 16px 6px;box-shadow:0 1px 0 var(--line)}
   .roster .c-date{width:36px;padding:0 2px}
   .roster tfoot th,.roster tfoot td{bottom:calc(56px + env(safe-area-inset-bottom,0px))}
   .roster thead th:not(.c-date):not(.c-note){width:39.5px}
   .c-note{min-width:0;cursor:pointer}
   .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2;padding:6px 1px 4px}
   .roster[data-nv="0"] .c-note:not(.n0),.roster[data-nv="1"] .c-note:not(.n1),.roster[data-nv="2"] .c-note:not(.n2){display:none}
-  .roster thead .c-note .nlab{display:none}
+  .roster .nlab{display:none}
   .notesel{display:block;width:100%;font-size:10px;padding:0;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-family:var(--font-body)}
   .note-in{height:25px;font-size:10.5px;line-height:1.15;padding:1px 3px 0;word-break:break-all}
   .dn{min-width:1.25em;font-size:13px}
@@ -331,9 +331,9 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   <h1 class="visually-hidden">勤休輪值簿</h1>
 
   <!-- 月班表 -->
-  <section id="view-roster" class="split">
+  <section id="view-roster" class="split view-roster">
     <div class="roster-main">
-      <div class="tools" id="rtools">
+      <div class="tools tools--roster" id="rtools">
         <div class="monthnav">
           <button class="ibtn" id="prevM" type="button" aria-label="上個月">‹</button>
           <output id="monthLabel"></output>
@@ -344,8 +344,8 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <button class="synclight" type="button" data-sync data-state="off" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
         <div class="brushbar">
-          <div class="group" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
-          <div class="group" id="lbrushes" role="toolbar" aria-label="假別畫筆"><span class="glabel">假別</span></div>
+          <div class="group brushbar__group--shift" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
+          <div class="group brushbar__group--leave" id="lbrushes" role="toolbar" aria-label="假別畫筆"><span class="glabel">假別</span></div>
           <div class="group opsbar" id="opsBar"><button class="btn" id="seqBtn" type="button">設定</button></div>
         </div>
       </div>
@@ -357,7 +357,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   <div class="panel-scrim" id="panelScrim"></div>
   <aside class="panel" id="panel" aria-label="設定">
       <div class="panel-head"><h2 class="ptitle">設定</h2><button class="ibtn" id="panelClose" type="button" aria-label="關閉設定">×</button></div>
-      <div class="panel__section" id="opsHome">
+      <div class="panel__section panel__section--ops" id="opsHome">
         <h2 id="opsTitle">本月操作</h2>
         <div class="group" id="opsGroup">
           <button class="btn primary" id="fillBtn" type="button">依輪序填入</button>
@@ -394,7 +394,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 
   <!-- 年度休假 -->
   <section id="view-year" class="view-year" hidden>
-    <div class="tools" id="ytools">
+    <div class="tools tools--year" id="ytools">
       <div class="monthnav">
         <button class="ibtn" id="prevY" type="button" aria-label="前一年">‹</button>
         <output id="yearLabel"></output>
@@ -404,7 +404,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <button class="synclight" type="button" data-sync data-state="off" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
       <div class="group"><label class="glabel" for="meSel">人員</label><select id="meSel" class="btn"></select></div>
-      <div class="brushbar"><div class="group" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div></div>
+      <div class="brushbar"><div class="group brushbar__group--year" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div></div>
     </div>
     <div class="ystats" id="ystats"></div>
     <p class="hint">右上角有小點的格子是從「月班表」自動帶入（✕ 算休假；補休、其他假、停休、國外、上班照假別帶入；其餘班別算上班）；用畫筆點過就改為手動標記，選「自動」可還原。六、日以橘色底與上下框線標出，跟你原本紅框的六日列對應。</p>
