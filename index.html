@@ -31,7 +31,7 @@
   --off-cell:#c4e2cd;
   --y-rest:#2c8754; --y-comp:#7b873a; --y-stop:#e08bcd; --y-other:#2f9fd0; --y-train:#56616b;
   --y-work:#ffffff; --y-work-ink:#15201a; --y-none:#e1e7e3; --y-none-ink:#8b978f; --y-on-ink:#ffffff;
-  --today:#e9b22f; --sel:#2f6fd6;
+  --today:#e9b22f; --sel:#2f6fd6; --busy:#d98a1c;
   --font-display:"Chiron Sung HK","Noto Serif TC","Songti TC",serif;
   --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   --font-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
@@ -81,6 +81,39 @@ button{cursor:pointer}
 .tabs a{padding:6px 14px;border-radius:6px;text-decoration:none;color:var(--muted);font-weight:500}
 .tabs a[aria-current="page"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0 / .12)}
 .lockbtn{display:inline-flex;align-items:center;gap:6px;height:34px}
+.todaybtn{height:34px;color:var(--alert);border-color:color-mix(in srgb,var(--alert) 55%,transparent);font-weight:700}
+.synclight{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-family:var(--font-data);font-size:12px;color:var(--muted)}
+.sdot{width:9px;height:9px;border-radius:50%;background:var(--line-strong);flex:none}
+.synclight[data-state="ok"] .sdot{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.synclight[data-state="busy"] .sdot{background:var(--busy)}
+.synclight[data-state="err"] .sdot{background:var(--alert)}
+.synclight[data-state="err"]{color:var(--alert)}
+.synclight[data-state="ro"] .sdot{background:transparent;box-shadow:inset 0 0 0 2px var(--accent)}
+@media (prefers-reduced-motion:no-preference){.synclight[data-state="busy"] .sdot{animation:spulse 1s ease-in-out infinite}@keyframes spulse{50%{opacity:.25}}}
+.bnav{display:none}
+.roster tr.today td{background:color-mix(in srgb,var(--alert) 10%,var(--surface))}
+.roster tr.hol .dn,.roster tr.hol .dw{color:var(--alert)}
+.roster .hn{display:block;font-size:9px;line-height:1.1;color:var(--alert);max-width:5.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.yd.hol::before{content:"";position:absolute;left:1px;top:1px;border-top:6px solid var(--alert);border-right:6px solid transparent;border-top-left-radius:2px}
+/* 我的班 */
+.mycard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:10px;min-width:0;width:100%;max-width:620px}
+.mc-top{display:flex;gap:12px;align-items:center;min-width:0}
+.mc-big{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:22px;font-family:var(--font-data);flex:none}
+.mc-big:not([class*="k-"]){background:var(--n-bg);color:var(--n-ink)}
+.mc-big.k-off{background:var(--off-cell);color:var(--alert);font-family:var(--font-body)}
+.mc-big.sm{font-size:15px;font-family:var(--font-body)}
+.mc-who{font-size:12px;color:var(--muted);display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.mc-sel{border:0;background:transparent;font-weight:700;color:var(--ink);font-size:13px;padding:0;font-family:var(--font-body)}
+.mc-now{font-size:17px;font-weight:700;line-height:1.3}
+.mc-nx{font-size:12px;color:var(--muted)}
+.mc-nx b{color:var(--ink)}
+.mc-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.mc-week div{display:grid;gap:3px;justify-items:center;font-size:10.5px;color:var(--muted);min-width:0}
+.mc-week .chip{min-width:28px}
+.mc-week .t{color:var(--alert);font-weight:700}
+.mc-week .h span{color:var(--alert)}
+.mc-stat{font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.mc-stat b{color:var(--ink);font-family:var(--font-data)}
 .lockbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .is-locked #brushes,.is-locked #ybrushes,.is-locked #lbrushes .brush:not(.frame-brush){display:none}
 td.cell.f-r{outline:2.5px solid var(--alert);outline-offset:-3px}
@@ -239,8 +272,22 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .tabs a{padding:5px 8px;font-size:13px}
   .tabs{padding:2px}
   .lockbtn{width:34px;height:32px;padding:0;justify-content:center;margin-left:auto}
+  .todaybtn{height:30px;padding:0 8px;font-size:12px}
+  .synclight{height:30px;padding:0 7px;font-size:11px;gap:4px}
+  #rtools .tabs,#ytools .tabs{display:none}
+  .bnav{display:grid;grid-template-columns:repeat(3,1fr);position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);
+    padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+  .bnav a{display:grid;justify-items:center;gap:1px;font-size:11px;color:var(--muted);text-decoration:none;padding:2px 0}
+  .bnav a[aria-current="page"]{color:var(--accent);font-weight:700}
+  .bnav svg{width:22px;height:22px}
+  .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+  html.view-tools #view-roster > div:first-child{display:none!important}
+  html:not(.view-tools) #view-roster > aside{display:none}
+  .roster .hn{display:none}
+  .mycard{padding:10px 12px;gap:8px}
+  .mc-big{width:46px;height:46px;font-size:20px}
   .lockbtn .txt{display:none}
-  main{padding-block:12px 40px;gap:12px}
+  main{padding-block:12px calc(76px + env(safe-area-inset-bottom,0px));gap:12px}
   #view-roster > div{gap:10px!important}
   .tools{gap:6px}
   .tools>.brushbar{flex:1 1 100%}
@@ -264,7 +311,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .roster thead th{padding:6px 1px 4px;top:calc(env(safe-area-inset-top,0px) + var(--rtoolsH,0px))}
   #rtools,#ytools{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);margin-inline:-16px;padding:8px 16px 6px;box-shadow:0 1px 0 var(--line)}
   .roster .c-date{width:36px;padding:0 2px}
-  .roster tfoot th,.roster tfoot td{bottom:env(safe-area-inset-bottom,0px)}
+  .roster tfoot th,.roster tfoot td{bottom:calc(56px + env(safe-area-inset-bottom,0px))}
   .roster thead th:not(.c-date):not(.c-note){width:39.5px}
   .c-note{min-width:0;padding:0 3px!important;cursor:pointer}
   .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2;padding:6px 1px 4px!important}
@@ -281,7 +328,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .nm{width:100%;font-size:11px}
   .offsel{width:100%;font-size:10px;padding:0}
   .roster tfoot th,.roster tfoot td{height:28px;font-size:12px}
-  .roster tfoot tr:first-child th,.roster tfoot tr:first-child td{bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+  .roster tfoot tr:first-child th,.roster tfoot tr:first-child td{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
   .panel{padding:12px;gap:12px}
   /* year */
   .mfull{display:none}.mshort{display:inline}
@@ -311,6 +358,8 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
           <button class="ibtn" id="nextM" type="button" aria-label="下個月">›</button>
         </div>
         <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
+        <button class="btn todaybtn" id="todayBtn" type="button">今天</button>
+        <button class="synclight" type="button" data-sync data-state="off" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
         <div class="brushbar">
           <div class="group" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
@@ -322,7 +371,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
     </div>
     <aside class="panel">
       <div style="display:grid;gap:8px">
-        <h2>本月操作</h2>
+        <h2 id="opsTitle">本月操作</h2>
         <div class="group">
           <button class="btn primary" id="fillBtn" type="button">依輪序填入</button>
           <label class="group" for="fillN" style="gap:4px;font-size:13px">本月起<input id="fillN" type="number" min="1" max="24" step="1" class="btn" style="width:4.2em;padding:0 6px;text-align:center">個月</label>
@@ -358,6 +407,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <button class="ibtn" id="nextY" type="button" aria-label="下一年">›</button>
       </div>
       <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
+        <button class="synclight" type="button" data-sync data-state="off" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
       <div class="group"><label class="glabel" for="meSel">人員</label><select id="meSel" class="btn"></select></div>
       <div class="brushbar"><div class="group" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div></div>
@@ -367,6 +417,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
     <div class="ywrap"><table class="year" id="ygrid"></table></div>
   </section>
 </main>
+<nav class="bnav" aria-label="主選單"><a href="#roster" data-tab="roster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>月班表</span></a><a href="#year" data-tab="year"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>年度休假</span></a><a href="#tools" data-tab="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>設定</span></a></nav>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script>
@@ -438,7 +489,22 @@ function migrate(s){if(!s)return s;const r=c=>RENAME[c]||c;
   s.seq=(s.seq||[]).map(r);
   Object.values(s.roster||{}).forEach(M=>Object.values(M).forEach(P=>Object.keys(P).forEach(d=>{P[d]=r(P[d]);})));
   const D={};Object.keys(s.desc||{}).forEach(k=>{const n=r(k);if(D[n]==null||k===n)D[n]=s.desc[k];});s.desc=D;return s;}
+// 國定假日與補假（依人事總處辦公日曆表規則整理，如有異動請以公告為準）
+const HOLIDAYS={
+ '2026-01-01':'元旦','2026-02-16':'除夕','2026-02-17':'春節','2026-02-18':'春節','2026-02-19':'春節','2026-02-20':'小年夜補假',
+ '2026-02-27':'和平紀念日補假','2026-02-28':'和平紀念日','2026-04-03':'兒童節補假','2026-04-04':'兒童節','2026-04-05':'清明節','2026-04-06':'清明節補假',
+ '2026-05-01':'勞動節','2026-06-19':'端午節','2026-09-25':'中秋節','2026-09-28':'教師節','2026-10-09':'國慶日補假','2026-10-10':'國慶日',
+ '2026-10-25':'光復節','2026-10-26':'光復節補假','2026-12-25':'行憲紀念日',
+ '2027-01-01':'元旦','2027-02-04':'小年夜','2027-02-05':'除夕','2027-02-06':'春節','2027-02-07':'春節','2027-02-08':'春節','2027-02-09':'春節補假','2027-02-10':'春節補假',
+ '2027-02-28':'和平紀念日','2027-03-01':'和平紀念日補假','2027-04-04':'兒童節','2027-04-05':'清明節','2027-04-06':'兒童節補假',
+ '2027-04-30':'勞動節補假','2027-05-01':'勞動節','2027-06-09':'端午節','2027-09-15':'中秋節','2027-09-28':'教師節',
+ '2027-10-10':'國慶日','2027-10-11':'國慶日補假','2027-10-25':'光復節','2027-12-24':'行憲紀念日補假','2027-12-25':'行憲紀念日'
+};
+const holName=(y,m,d)=>HOLIDAYS[ds(y,m,d)]||'';
+const ME_KEY='duty-roster-me';
+function localMe(){try{const v=localStorage.getItem(ME_KEY);return v===null?null:+v;}catch(e){return null;}}
 let S=migrate(load())||sample();
+{const lm=localMe();if(lm!=null&&S.people[lm]!=null)S.me=lm;}
 let cur={y:now.getFullYear(),m:now.getMonth()+1};
 if(!S.roster[ym(cur.y,cur.m)]){cur={y:2026,m:12};}
 const NOTE_COLS=[{k:'notes',n:'勤務註記',s:'勤務',id:'note'},{k:'notes2',n:'雜務註記1',s:'雜務1',id:'note2'},{k:'notes3',n:'雜務註記2',s:'雜務2',id:'note3'}];
@@ -499,7 +565,8 @@ function renderRoster(){
   const NTS=NOTE_COLS.map(c=>(S[c.k]||{})[ym(cur.y,cur.m)]||{});
   for(let d=1;d<=n;d++){
     const w=wdOf(cur.y,cur.m,d),we=w>=5,td=ds(cur.y,cur.m,d)===TODAY;
-    h+='<tr data-d="'+d+'" class="'+(we?'we ':'')+(td?'today':'')+'"><th class="c-date" scope="row"><span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
+    const hn=holName(cur.y,cur.m,d);
+    h+='<tr data-d="'+d+'" class="'+(we?'we ':'')+(td?'today ':'')+(hn?'hol':'')+'"><th class="c-date" scope="row"'+(hn?' title="'+hn+'"':'')+'>'+(hn?'<span class="hn">'+hn+'</span>':'')+'<span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
     S.people.forEach((_,p)=>{const c=getC(p,d);const F=getF(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
     h+=NOTE_COLS.map((c,i)=>'<td class="c-note n'+i+'"><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2" aria-label="'+cur.m+'/'+d+' '+c.n+'">'+esc(NTS[i][d]||'')+'</textarea></td>').join('')+'</tr>';
   }
@@ -508,6 +575,24 @@ function renderRoster(){
   $('rgrid').innerHTML=h;$('rgrid').dataset.nv=noteView;
   updStats();
 }
+function codeAt(p,y,m,d){return((S.roster[ym(y,m)]||{})[p]||{})[d]||'';}
+function myCard(nOff,nDuty){
+  const p=S.me,t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const at=i=>{const x=new Date(t0);x.setDate(x.getDate()+i);const y=x.getFullYear(),m=x.getMonth()+1,d=x.getDate();return{y,m,d,w:wdOf(y,m,d),c:codeAt(p,y,m,d),h:holName(y,m,d)};};
+  const word=c=>!c?'未排班':c==='值'?'值班':LM[c]?LM[c].n:(c+' 班');
+  const short=c=>!c?'未排':c==='X'?'休':c;
+  const T=at(0),N=at(1);let nx=null;for(let i=1;i<=120;i++){const a=at(i);if(a.c==='值'){nx=a;break;}}
+  const k=CM[T.c];const bigCls=(k&&k.cls?k.cls:'')+(T.c&&T.c.length>1?' sm':'');
+  let wk='';for(let i=0;i<7;i++){const a=at(i);wk+='<div class="'+(i===0?'t ':'')+(a.h?'h':'')+'"'+(a.h?' title="'+a.h+'"':'')+'>'+(chip(a.c)||'<span class="chip" style="background:transparent">·</span>')+'<span>'+(i===0?'今天':a.d+'（'+WD[a.w]+'）')+'</span></div>';}
+  const opts=S.people.map((n,i)=>'<option value="'+i+'"'+(i===p?' selected':'')+'>'+esc(n)+'</option>').join('');
+  return '<section class="mycard" aria-label="我的班"><div class="mc-top"><div class="mc-big '+bigCls+'">'+(T.c?esc(short(T.c)):'–')+'</div><div style="min-width:0">'+
+    '<div class="mc-who"><select class="mc-sel" id="mcSel" aria-label="切換人員">'+opts+'</select><span>・'+T.m+'/'+T.d+'（'+WD[T.w]+'）'+(T.h?'・<span style="color:var(--alert)">'+T.h+'</span>':'')+'</span></div>'+
+    '<div class="mc-now">今天'+word(T.c)+'</div>'+
+    '<div class="mc-nx">明天 <b>'+esc(short(N.c))+'</b>・下次值班 <b>'+(nx?nx.m+'/'+nx.d+'（'+WD[nx.w]+'）':'未排')+'</b></div></div></div>'+
+    '<div class="mc-week">'+wk+'</div>'+
+    '<div class="mc-stat">'+cur.m+' 月：休 <b>'+nOff+'</b> 天・值班 <b>'+nDuty+'</b> 次</div></section>';
+}
+document.addEventListener('change',e=>{if(e.target.id==='mcSel')setMe(+e.target.value);});
 function updStats(){
   const n=dim(cur.y,cur.m);
   const fd=S.people.map(()=>0),fo=S.people.map(()=>0);
@@ -516,9 +601,7 @@ function updStats(){
   }
   S.people.forEach((_,p)=>{$('fd-'+p).textContent=fd[p];$('fo-'+p).textContent=fo[p];});
   const me=S.people[S.me]||'';
-  let s='';
-  s+='<span class="pill">'+esc(me)+' 本月休 <span class="n">'+(fo[S.me]||0)+'</span> 天 · 值班 <span class="n">'+(fd[S.me]||0)+'</span> 次</span>';
-  $('rsum').innerHTML=s;
+  $('rsum').innerHTML=myCard(fo[S.me]||0,fd[S.me]||0);
 }
 function paintCell(td){
   const p=+td.dataset.p,d=+td.dataset.d;
@@ -599,7 +682,8 @@ function renderYBrushes(){
     b.setAttribute('aria-pressed',ybrush===t.k);b.onclick=()=>{ybrush=t.k;renderYBrushes();};g.appendChild(b);});
 }
 function renderYearSel(){$('meSel').innerHTML=S.people.map((n,p)=>'<option value="'+p+'"'+(p===S.me?' selected':'')+'>'+esc(n)+'</option>').join('');}
-$('meSel').onchange=e=>{S.me=+e.target.value;save();renderYear();renderRoster();};
+function setMe(v){S.me=v;try{localStorage.setItem(ME_KEY,v);}catch(e){}renderYearSel();renderYear();renderRoster();}
+$('meSel').onchange=e=>setMe(+e.target.value);
 
 function renderYear(){
   const Y=S.year;$('yearLabel').value=Y+' 年';
@@ -615,7 +699,8 @@ function renderYear(){
       if(d<1||d>dim(Y,m)){h+='<td class="yc"></td>';continue;}
       const t=yType(Y,m,d);if(t.t)cnt[t.t][m-1]++;
       const key=ds(Y,m,d);
-      h+='<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(key===TODAY?' today':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+m+'/'+d+'（'+WD[w]+'）'+(t.t?YT.find(x=>x.k===t.t).n:'未標記')+(t.auto?'・自動帶入':'')+'">'+d+'</div></td>';
+      const hy=holName(Y,m,d);
+      h+='<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(key===TODAY?' today':'')+(hy?' hol':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+m+'/'+d+'（'+WD[w]+'）'+(hy?hy+'・':'')+(t.t?YT.find(x=>x.k===t.t).n:'未標記')+(t.auto?'・自動帶入':'')+'">'+d+'</div></td>';
     }
     h+='<th class="wl" scope="row">'+WD[w]+'</th></tr>';
   }
@@ -646,9 +731,11 @@ $('nextY').onclick=()=>{S.year++;save();renderYear();};
 
 /* ---------- shell ---------- */
 function route(){
-  const v=location.hash==='#year'?'year':'roster';
-  $('view-roster').hidden=v!=='roster';$('view-year').hidden=v!=='year';
-  document.querySelectorAll('[data-tab]').forEach(a=>{if(a.dataset.tab===v)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+  const v=location.hash==='#year'?'year':location.hash==='#tools'?'tools':'roster';
+  $('view-roster').hidden=v==='year';$('view-year').hidden=v!=='year';
+  document.documentElement.classList.toggle('view-tools',v==='tools');
+  document.querySelectorAll('[data-tab]').forEach(a=>{const on=a.dataset.tab===v||(v==='tools'&&a.dataset.tab==='roster'&&!a.closest('.bnav'));
+    if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   if(v==='year')renderYear();
 }
 
@@ -671,11 +758,26 @@ function applyLock(){
 document.addEventListener('click',e=>{const b=e.target.closest('.lockbtn');if(!b)return;editMode=!editMode;applyLock();
   toast(editMode?'已開始編輯':'已鎖定，班表不會被誤觸修改');});
 {const r1=renderRoster,r2=renderYear,r3=renderSeq;
- renderRoster=function(){r1();applyLock();};renderYear=function(){r2();applyLock();};renderSeq=function(){r3();applyLock();};}
+ renderRoster=function(){r1();applyLock();$('opsTitle').textContent='本月操作・'+cur.y+' 年 '+cur.m+' 月';};renderYear=function(){r2();applyLock();};renderSeq=function(){r3();applyLock();};}
 function renderAll(){renderBrushes();renderSeq();renderRoster();renderYearSel();renderYBrushes();renderYear();route();}
 window.addEventListener('hashchange',route);
 renderAll();
 // 手機：功能列固定在上方，表頭姓名接在功能列下面
+/* 今天：跳到本月並捲到今天那一列 */
+function scrollToToday(smooth){
+  const tr=document.querySelector('#rgrid tbody tr.today');if(!tr)return;
+  const wrap=$('rgridwrap'),head=$('rgrid').tHead,b=smooth?'smooth':'auto';
+  if(getComputedStyle(wrap).overflowY==='visible'){
+    const ref=tr.previousElementSibling||tr;
+    window.scrollTo({top:Math.max(0,ref.getBoundingClientRect().top+window.scrollY-$('rtools').offsetHeight-head.offsetHeight),behavior:b});
+  }else wrap.scrollTo({top:Math.max(0,tr.offsetTop-head.offsetHeight-tr.offsetHeight),behavior:b});
+}
+$('todayBtn').onclick=()=>{const t=new Date();if(location.hash==='#tools')location.hash='#roster';
+  cur={y:t.getFullYear(),m:t.getMonth()+1};lastCell=null;renderRoster();requestAnimationFrame(()=>scrollToToday(true));};
+if(cur.y===now.getFullYear()&&cur.m===now.getMonth()+1)setTimeout(()=>scrollToToday(false),60);
+document.addEventListener('click',e=>{if(!e.target.closest('[data-sync]'))return;
+  if(matchMedia('(max-width:640px)').matches&&location.hash!=='#tools')location.hash='#tools';
+  setTimeout(()=>$('syncBox').scrollIntoView({behavior:'smooth',block:'center'}),50);});
 if(window.ResizeObserver){const ro=new ResizeObserver(es=>es.forEach(en=>{const el=en.target;document.documentElement.style.setProperty('--'+el.id+'H',(el.offsetHeight||0)+'px');}));ro.observe($('rtools'));ro.observe($('ytools'));}
 
 /* ---------- 雲端同步（GitHub：把班表存成私人 repo 裡的 data.json） ---------- */
@@ -685,7 +787,10 @@ let pubText=null;
 const CLIENT=Math.random().toString(36).slice(2);
 let gh=null,ghSha=null,ghEtag=null,pushT=null,pushing=false,pendingRemote=null,pollT=null;
 try{gh=JSON.parse(localStorage.getItem(GHK)||'null');}catch(e){gh=null;}
-function setSync(msg,bad){const m=$('syncMsg');m.textContent=msg;m.style.color=bad?'var(--alert)':'';}
+function setSync(msg,bad){const m=$('syncMsg');m.textContent=msg;m.style.color=bad?'var(--alert)':'';
+  const st=bad?'err':/^已同步/.test(msg)?'ok':/同步中|等待上傳|連線中/.test(msg)?'busy':/^唯讀/.test(msg)?'ro':'off';
+  const tm=st==='ok'?(msg.match(/\d{2}:\d{2}/)||[''])[0]:st==='busy'?'同步中':st==='err'?'失敗':st==='ro'?'唯讀':'本機';
+  document.querySelectorAll('[data-sync]').forEach(b=>{b.dataset.state=st;b.querySelector('.stime').textContent=tm;b.title=msg;b.setAttribute('aria-label','同步狀態：'+msg);});}
 function hhmm(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 function b64enc(str){const b=new TextEncoder().encode(str);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s);}
 function b64dec(b64){const bin=atob(b64.replace(/\s/g,''));const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder().decode(u);}
@@ -709,6 +814,7 @@ function applyRemote(json){
   if(editing()){pendingRemote=json;return;}
   pendingRemote=null;
   try{const d=JSON.parse(json);S=migrate(d.state||d);}catch(e){return;}
+  {const lm=localMe();if(lm!=null&&S.people[lm]!=null)S.me=lm;}
   try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
   renderAll();
 }
