@@ -121,7 +121,8 @@
 
 ## 結構
 
-- [ ] #16【風險：高】圖示放在根目錄，與目錄結構不符
+- [x] #16【風險：高】圖示放在根目錄，與目錄結構不符
+  - 完成：2026-11-13（使用者已確認）。4 個 PNG 以 `git mv` 移到 `assets/icons/`，更新 index.html 2 個 `<link>` 與 manifest 2 個 `src`（manifest 本身留在根目錄）。以本機伺服器模擬 `/duty-roster/` 路徑，網頁圖示、manifest 與其圖示皆 200；截圖一致。
   - 檔案：apple-touch-icon.png、favicon-32.png、icon-192.png、icon-512.png、manifest.webmanifest、index.html
   - 問題：圖示應放在 `assets/`。
   - 做法：搬到 `assets/icons/`；受影響路徑：index.html 的 2 個 `<link>`、manifest.webmanifest 的 2 個 `src`。動手前先列出確認。
