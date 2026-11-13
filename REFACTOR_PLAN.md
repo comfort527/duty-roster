@@ -113,6 +113,7 @@
   - 驗證：拆分前後兩個畫面的 `innerHTML` 字串比對一致；TEST_CHECKLIST「月班表」「年度休假」
 
 - [ ] #15【風險：高】JS 拆檔並改用 ES Modules（需拆成多次）
+  - 狀態：2026-11-13 使用者決定暫緩，之後要做時再確認。
   - 檔案：index.html → js/main.js、js/api.js、js/utils.js、js/constants.js（逐步）
   - 問題：約 460 行 JS 寫在單一 inline `<script>`（IIFE）內，違反「單檔不超過 200 行」「fetch 集中在 api.js」「使用 ES Modules」。
   - 做法：依序拆成小項，每次一個檔案：(a) 純函式到 utils.js（日期、`esc`、base64）(b) 常數到 constants.js（班別、假別、國定假日、儲存鍵名）(c) GitHub 讀寫到 api.js (d) 其餘到 main.js。執行時再細分。
@@ -128,7 +129,8 @@
   - 做法：搬到 `assets/icons/`；受影響路徑：index.html 的 2 個 `<link>`、manifest.webmanifest 的 2 個 `src`。動手前先列出確認。
   - 驗證：TEST_CHECKLIST「網頁圖示」；GitHub Pages 上 Console 沒有 404
 
-- [ ] #17【風險：高】CSS 拆成 base.css、components.css
+- [x] #17【風險：高】CSS 拆成 base.css、components.css
+  - 完成：2026-11-13（使用者已確認）。`<head>` 重設樣式與全站基礎（box-sizing、body、表單、焦點、`.wrap`）移到 `css/base.css`，其餘元件與斷點移到 `css/components.css`，依原順序以 `<link>` 載入；index.html 不再有 `<style>`（909→663 行）。淺色 8 張、三種主題 6 張截圖改前改後皆相同，本機伺服器確認 3 個 CSS 皆 200，同步／鎖定／固定工具列測試通過。
   - 檔案：index.html、新增 css/base.css、css/components.css
   - 問題：約 350 行 CSS 寫在 index.html 內。
   - 做法：完成 #6、#10、#11 後再進行，一次搬一個區塊。
@@ -136,7 +138,8 @@
 
 ## 檢查中新發現
 
-- [ ] #18【風險：低】唯讀模式載入失敗時沒有「重試」按鈕
+- [x] #18【風險：低】唯讀模式載入失敗時沒有「重試」按鈕
+  - 不處理：2026-11-13 使用者決定不加按鈕，維持每分鐘及切回頁面時自動重試。
   - 檔案：index.html（`renderSync`、`pullPublic`）
   - 問題：規則要求錯誤畫面要有重試按鈕；目前未設定 Token 的裝置載入失敗時只會顯示訊息，要等 60 秒自動重試或切回頁面。
   - 做法：未設定 Token 時，在雲端同步區塊加一顆「重新載入」按鈕呼叫 `pullPublic`（會新增一顆按鈕，動手前先確認外觀）。
@@ -148,3 +151,9 @@
   - 問題：`<title>勤休輪值簿</title>`、`<meta name="claude:viewport-fit-sides">`、Google 字型的兩個 `preconnect` 與樣式表 `<link>` 位於 `<body>` 開頭，不符合 HTML 規範（瀏覽器目前能容錯）。`<meta name="claude:viewport-fit-sides">` 是 Claude 預覽頁專用，GitHub Pages 用不到。
   - 做法：把這幾行移到 `<head>`；`claude:viewport-fit-sides` 先問使用者要不要刪除。
   - 驗證：375／1280 截圖與基準一致；瀏覽器分頁標題仍為「勤休輪值簿」；字型正常載入
+
+- [ ] #20【風險：低】刪除已經沒用到的 CSS 規則
+  - 檔案：css/components.css
+  - 問題：舊功能移除後留下的樣式仍在：舊標題列 `.top`、`.top .wrap`（含手機版一條）、`.brand`、`.brand h1`、`.brand .yr`；示範資料提示 `.note`、`.note b`、`.linkbtn`；以及 `.kbd`、`.legend`、`.bad`。HTML 與 JS 都沒有使用。
+  - 做法：逐條確認未使用後刪除（約 13 條），動手前列出清單給使用者確認。
+  - 驗證：375／1280 截圖與三種主題截圖與基準一致
