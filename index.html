@@ -508,7 +508,25 @@ function sample(){
   return s;
 }
 function load(){try{const t=localStorage.getItem(KEY);return t?JSON.parse(t):null;}catch(e){return null;}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}if(onSaved)onSaved();}
+/* 瀏覽器儲存：失敗時（無痕模式、空間不足）記錄警告，寫入失敗時提示一次，不中斷操作 */
+let storageWarned=false;
+function readStorage(key){
+  try{return localStorage.getItem(key);}
+  catch(e){console.warn('無法讀取瀏覽器儲存：'+key,e);return null;}
+}
+function writeStorage(key,value){
+  try{localStorage.setItem(key,value);return true;}
+  catch(e){
+    console.warn('無法寫入瀏覽器儲存：'+key,e);
+    if(!storageWarned){storageWarned=true;toast('這個瀏覽器無法儲存資料（可能是無痕模式或空間已滿），關閉頁面後修改會消失。');}
+    return false;
+  }
+}
+function removeStorage(key){
+  try{localStorage.removeItem(key);}
+  catch(e){console.warn('無法刪除瀏覽器儲存：'+key,e);}
+}
+function save(){writeStorage(KEY,JSON.stringify(S));if(onSaved)onSaved();}
 const RENAME={'先1':'1','先2':'2','3〇':'3','3○':'3','休假':'X','補休24時':'補休','補24':'補休','補24時':'補休','其他假':'其他','公差訓練':'國外','公差':'國外','國外專案':'國外'};
 function migrate(s){if(!s)return s;const r=c=>RENAME[c]||c;
   s.seq=(s.seq||[]).map(r);
@@ -533,7 +551,7 @@ let S=migrate(load())||sample();
 let cur={y:now.getFullYear(),m:now.getMonth()+1};
 if(!S.roster[ym(cur.y,cur.m)]){cur={y:2026,m:12};}
 const NOTE_COLS=[{k:'notes',n:'勤務註記',s:'勤務',id:'note'},{k:'notes2',n:'雜務註記1',s:'雜務1',id:'note2'},{k:'notes3',n:'雜務註記2',s:'雜務2',id:'note3'}];
-let noteView=0;try{noteView=Math.min(2,Math.max(0,+localStorage.getItem('duty-roster-nv')||0));}catch(e){}
+let noteView=Math.min(2,Math.max(0,+readStorage('duty-roster-nv')||0));
 let brush='X',ybrush='rest',painting=false,ypainting=false,lastCell=null,undo=null;
 
 /* ---------- toast ---------- */
@@ -633,7 +651,7 @@ rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-
 });
 rg.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('note-in')){e.preventDefault();e.target.blur();}});
 rg.addEventListener('change',e=>{
-  if(e.target.classList.contains('notesel')){noteView=+e.target.value;try{localStorage.setItem('duty-roster-nv',noteView);}catch(err){}renderRoster();return;}
+  if(e.target.classList.contains('notesel')){noteView=+e.target.value;writeStorage('duty-roster-nv',String(noteView));renderRoster();return;}
   const t=e.target;const p=+t.dataset.p;
   if(t.classList.contains('nm')){S.people[p]=t.value.trim()||('隊員'+(p+1));save();renderYearSel();updStats();}
   if(t.classList.contains('offsel')){
@@ -688,7 +706,7 @@ function renderYBrushes(){
     b.setAttribute('aria-pressed',ybrush===t.k);b.onclick=()=>{ybrush=t.k;renderYBrushes();};g.appendChild(b);});
 }
 function renderYearSel(){$('meSel').innerHTML=S.people.map((n,p)=>'<option value="'+p+'"'+(p===S.me?' selected':'')+'>'+esc(n)+'</option>').join('');}
-function setMe(v){S.me=v;try{localStorage.setItem(ME_KEY,v);}catch(e){}renderYearSel();renderYear();renderRoster();}
+function setMe(v){S.me=v;writeStorage(ME_KEY,String(v));renderYearSel();renderYear();renderRoster();}
 $('meSel').onchange=e=>setMe(+e.target.value);
 
 function renderYear(){
@@ -851,7 +869,7 @@ function applyRemote(json){
   pendingRemote=null;
   try{const d=JSON.parse(json);S=migrate(d.state||d);}catch(e){return;}
   {const lm=localMe();if(lm!=null&&S.people[lm]!=null)S.me=lm;}
-  try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
+  writeStorage(KEY,JSON.stringify(S));
   renderAll();
 }
 document.addEventListener('focusout',()=>{setTimeout(()=>{if(pendingRemote&&!editing())applyRemote(pendingRemote);},0);});
@@ -899,9 +917,9 @@ onSaved=()=>{if(!gh){setSync('這台還沒設定 Token，修改只存在本機�
 $('syncForm').addEventListener('submit',e=>{e.preventDefault();
   const repo=$('ghRepo').value.trim().replace(/^https?:\/\/github\.com\//,'').replace(/\/$/,''),token=$('ghToken').value.trim();
   if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){setSync('請填 repo（例如 comfort527/duty-roster）和 Token。',true);return;}
-  gh={repo,token};ghSha=null;ghEtag=null;try{localStorage.setItem(GHK,JSON.stringify(gh));}catch(err){}
+  gh={repo,token};ghSha=null;ghEtag=null;writeStorage(GHK,JSON.stringify(gh));
   $('syncForm').hidden=true;renderSync();startSync();});
-$('ghOff').onclick=()=>{gh=null;try{localStorage.removeItem(GHK);}catch(e){}clearInterval(pollT);$('syncForm').hidden=true;renderSync();startSync();};
+$('ghOff').onclick=()=>{gh=null;removeStorage(GHK);clearInterval(pollT);$('syncForm').hidden=true;renderSync();startSync();};
 function startSync(){
   clearInterval(pollT);
   if(!gh){pullPublic();pollT=setInterval(()=>{if(document.visibilityState==='visible')pullPublic();},60000);return;}

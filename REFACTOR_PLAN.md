@@ -27,7 +27,8 @@
   - 做法：改用 `j?.sha`、`j?.content?.sha ?? null`，缺欄位時顯示「GitHub 回應格式不正確」並 `console.error`。
   - 驗證：TEST_CHECKLIST「設定 Token」「上傳」「兩台裝置」
 
-- [ ] #4【風險：低】其餘空的 `catch {}`（localStorage 讀寫）
+- [x] #4【風險：低】其餘空的 `catch {}`（localStorage 讀寫）
+  - 完成：2026-11-13。新增 `readStorage`／`writeStorage`／`removeStorage`，7 處改用；失敗時 `console.warn`，寫入失敗時提示一次。實測正常記憶與禁止儲存兩種情況，截圖與基準一致。
   - 檔案：index.html 第 511、536、636、691、854、888、890 行
   - 問題：localStorage 被瀏覽器封鎖或空間不足時完全沒有紀錄，違反「禁止空的 catch」。
   - 做法：新增一個 `readStorage` / `writeStorage` 小工具，失敗時 `console.warn`，七處改用它；畫面行為不變。
