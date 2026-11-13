@@ -564,28 +564,57 @@ function renderBrushes(){
     b.setAttribute('aria-pressed',brush===k);b.onclick=()=>{brush=k;renderBrushes();};lg.appendChild(b);});
 }
 
+/* ---------- 月班表：表頭、每日一列、表尾分開組裝 ---------- */
+function buildOffsetOptions(p,idx1,len){
+  let o='<option value="">手動</option>';
+  for(let i=0;i<len;i++){
+    const pos=mod(idx1+i,len);
+    o+='<option value="'+i+'"'+(S.offsets[p]===i?' selected':'')+'>'+esc(seqLabel(pos))+'</option>';
+  }
+  return o;
+}
+function buildPersonHeader(nm,p,idx1,len){
+  return '<th scope="col"><label class="visually-hidden" for="nm-'+p+'">第'+(p+1)+'位姓名</label><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'">'+
+    '<label class="visually-hidden" for="off-'+p+'">'+esc(nm)+' 本月1日的輪序</label><select class="offsel" id="off-'+p+'" data-p="'+p+'">'+buildOffsetOptions(p,idx1,len)+'</select></th>';
+}
+function buildNoteHeader(c,i){
+  const opts=NOTE_COLS.map((o,j)=>'<option value="'+j+'"'+(j===i?' selected':'')+'>'+o.s+'</option>').join('');
+  return '<th scope="col" class="c-note n'+i+'"><span class="nlab">'+c.n+'</span><label class="visually-hidden" for="nsel-'+i+'">切換註記欄</label><select class="notesel" id="nsel-'+i+'" data-n="'+i+'">'+opts+'</select></th>';
+}
+function buildRosterHead(){
+  const idx1=dayIdx(cur.y,cur.m,1),len=S.seq.length;
+  return '<thead><tr><th class="c-date" scope="col">日期</th>'+
+    S.people.map((nm,p)=>buildPersonHeader(nm,p,idx1,len)).join('')+
+    NOTE_COLS.map(buildNoteHeader).join('')+'</tr></thead>';
+}
+function buildDateCell(d){
+  const w=wdOf(cur.y,cur.m,d),hn=holName(cur.y,cur.m,d);
+  return '<th class="c-date" scope="row"'+(hn?' title="'+hn+'"':'')+'>'+(hn?'<span class="hn">'+hn+'</span>':'')+'<span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
+}
+function buildShiftCell(p,d){
+  const c=getC(p,d),F=getF(p,d),isSel=lastCell&&lastCell.p===p&&lastCell.d===d;
+  return '<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(isSel?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';
+}
+function buildNoteCell(c,i,d,notes){
+  return '<td class="c-note n'+i+'"><label class="visually-hidden" for="'+c.id+'-'+d+'">'+cur.m+'/'+d+' '+c.n+'</label><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2">'+esc(notes[i][d]||'')+'</textarea></td>';
+}
+function buildDayRow(d,notes){
+  const w=wdOf(cur.y,cur.m,d),isToday=ds(cur.y,cur.m,d)===TODAY,hn=holName(cur.y,cur.m,d);
+  return '<tr data-d="'+d+'" class="'+(w>=5?'we ':'')+(isToday?'today ':'')+(hn?'hol':'')+'">'+buildDateCell(d)+
+    S.people.map((_,p)=>buildShiftCell(p,d)).join('')+
+    NOTE_COLS.map((c,i)=>buildNoteCell(c,i,d,notes)).join('')+'</tr>';
+}
+function buildRosterFoot(){
+  return '<tfoot><tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+
+    NOTE_COLS.map((_,i)=>'<td class="c-note n'+i+'"></td>').join('')+'</tr></tfoot>';
+}
 function renderRoster(){
   $('monthLabel').value=cur.y+' 年 '+cur.m+' 月';
-  const n=dim(cur.y,cur.m),idx1=dayIdx(cur.y,cur.m,1),L=S.seq.length;
-  let h='<thead><tr><th class="c-date" scope="col">日期</th>';
-  S.people.forEach((nm,p)=>{
-    let o='<option value="">手動</option>';
-    for(let i=0;i<L;i++){const pos=mod(idx1+i,L);o+='<option value="'+i+'"'+(S.offsets[p]===i?' selected':'')+'>'+esc(seqLabel(pos))+'</option>';}
-    h+='<th scope="col"><label class="visually-hidden" for="nm-'+p+'">第'+(p+1)+'位姓名</label><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'">'+
-       '<label class="visually-hidden" for="off-'+p+'">'+esc(nm)+' 本月1日的輪序</label><select class="offsel" id="off-'+p+'" data-p="'+p+'">'+o+'</select></th>';
-  });
-  h+=NOTE_COLS.map((c,i)=>'<th scope="col" class="c-note n'+i+'"><span class="nlab">'+c.n+'</span><label class="visually-hidden" for="nsel-'+i+'">切換註記欄</label><select class="notesel" id="nsel-'+i+'" data-n="'+i+'">'+NOTE_COLS.map((o,j)=>'<option value="'+j+'"'+(j===i?' selected':'')+'>'+o.s+'</option>').join('')+'</select></th>').join('')+'</tr></thead><tbody>';
-  const NTS=NOTE_COLS.map(c=>(S[c.k]||{})[ym(cur.y,cur.m)]||{});
-  for(let d=1;d<=n;d++){
-    const w=wdOf(cur.y,cur.m,d),we=w>=5,td=ds(cur.y,cur.m,d)===TODAY;
-    const hn=holName(cur.y,cur.m,d);
-    h+='<tr data-d="'+d+'" class="'+(we?'we ':'')+(td?'today ':'')+(hn?'hol':'')+'"><th class="c-date" scope="row"'+(hn?' title="'+hn+'"':'')+'>'+(hn?'<span class="hn">'+hn+'</span>':'')+'<span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
-    S.people.forEach((_,p)=>{const c=getC(p,d);const F=getF(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
-    h+=NOTE_COLS.map((c,i)=>'<td class="c-note n'+i+'"><label class="visually-hidden" for="'+c.id+'-'+d+'">'+cur.m+'/'+d+' '+c.n+'</label><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2">'+esc(NTS[i][d]||'')+'</textarea></td>').join('')+'</tr>';
-  }
-  h+='</tbody><tfoot>'+
-     '<tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+NOTE_COLS.map((_,i)=>'<td class="c-note n'+i+'"></td>').join('')+'</tr></tfoot>';
-  $('rgrid').innerHTML=h;$('rgrid').dataset.nv=noteView;
+  const notes=NOTE_COLS.map(c=>(S[c.k]||{})[ym(cur.y,cur.m)]||{});
+  let rows='';
+  for(let d=1;d<=dim(cur.y,cur.m);d++)rows+=buildDayRow(d,notes);
+  $('rgrid').innerHTML=buildRosterHead()+'<tbody>'+rows+'</tbody>'+buildRosterFoot();
+  $('rgrid').dataset.nv=noteView;
   updStats();
 }
 function updStats(){
@@ -679,41 +708,56 @@ function renderYearSel(){$('meSel').innerHTML=S.people.map((n,p)=>'<option value
 function setMe(v){S.me=v;writeStorage(ME_KEY,String(v));renderYearSel();renderYear();renderRoster();}
 $('meSel').onchange=e=>setMe(+e.target.value);
 
-function renderYear(){
-  const Y=S.year;$('yearLabel').value=Y+' 年';
+/* ---------- 年度休假：表頭、表身（同時計數）、表尾、統計卡分開組裝 ---------- */
+const sumArr=a=>a.reduce((x,y)=>x+y,0);
+const daysInYear=y=>((y%4===0&&y%100!==0)||y%400===0)?366:365;
+function buildYearHead(){
+  return '<thead><tr><th class="wl">週</th>'+MN.map((m,i)=>'<th><span class="mfull">'+m+'月</span><span class="mshort">'+(i+1)+'</span></th>').join('')+'<th class="wl">全年</th></tr></thead>';
+}
+function buildYearCell(Y,m,d,w,cnt){
+  const t=yType(Y,m,d);if(t.t)cnt[t.t][m-1]++;
+  const hy=holName(Y,m,d);
+  const tip=m+'/'+d+'（'+WD[w]+'）'+(hy?hy+'・':'')+(t.t?esc(YT.find(x=>x.k===t.t).n):'未標記')+(t.auto?'・自動帶入':'');
+  return '<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(ds(Y,m,d)===TODAY?' today':'')+(hy?' hol':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+tip+'">'+d+'</div></td>';
+}
+function buildYearBody(Y){
   const off=[];for(let m=1;m<=12;m++)off.push(wdOf(Y,m,1));
   const rows=Math.max(...off.map((o,i)=>o+dim(Y,i+1)));
   const cnt={};YT.forEach(t=>cnt[t.k]=Array(12).fill(0));
-  let h='<thead><tr><th class="wl">週</th>'+MN.map((m,i)=>'<th><span class="mfull">'+m+'月</span><span class="mshort">'+(i+1)+'</span></th>').join('')+'<th class="wl">全年</th></tr></thead><tbody>';
+  let h='<tbody>';
   for(let r=0;r<rows;r++){
-    const w=r%7,we=w>=5;
-    h+='<tr class="'+(we?'we ':'')+(w===5?'sat':w===6?'sun':'')+'"><th class="wl" scope="row">'+WD[w]+'</th>';
+    const w=r%7;
+    h+='<tr class="'+(w>=5?'we ':'')+(w===5?'sat':w===6?'sun':'')+'"><th class="wl" scope="row">'+WD[w]+'</th>';
     for(let m=1;m<=12;m++){
       const d=r-off[m-1]+1;
-      if(d<1||d>dim(Y,m)){h+='<td class="yc"></td>';continue;}
-      const t=yType(Y,m,d);if(t.t)cnt[t.t][m-1]++;
-      const key=ds(Y,m,d);
-      const hy=holName(Y,m,d);
-      h+='<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(key===TODAY?' today':'')+(hy?' hol':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+m+'/'+d+'（'+WD[w]+'）'+(hy?hy+'・':'')+(t.t?esc(YT.find(x=>x.k===t.t).n):'未標記')+(t.auto?'・自動帶入':'')+'">'+d+'</div></td>';
+      h+=(d<1||d>dim(Y,m))?'<td class="yc"></td>':buildYearCell(Y,m,d,w,cnt);
     }
     h+='<th class="wl" scope="row">'+WD[w]+'</th></tr>';
   }
-  const sum=a=>a.reduce((x,y)=>x+y,0);
-  const total=Array(12).fill(0).map((_,i)=>cnt.rest[i]+cnt.comp[i]+cnt.other[i]);
-  const frow=(lab,arr,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+esc(lab)+'</th>'+arr.map(v=>'<td>'+(v||'·')+'</td>').join('')+'<td class="yt">'+sum(arr)+'</td></tr>';
-  h+='</tbody><tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow(otherName(),cnt.other)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',total,'total')+'</tfoot>';
-  $('ygrid').innerHTML=h;
-  // fix tfoot first col label width: the label th sits in the weekday column
-  const YD=((Y%4===0&&Y%100!==0)||Y%400===0)?366:365;
-  const T=sum(total),tgt=+S.target||0,ann=+S.announced||0,diff=tgt-T;
+  return {html:h+'</tbody>',cnt};
+}
+const monthTotals=cnt=>Array(12).fill(0).map((_,i)=>cnt.rest[i]+cnt.comp[i]+cnt.other[i]);
+function buildYearFoot(cnt){
+  const frow=(lab,arr,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+esc(lab)+'</th>'+arr.map(v=>'<td>'+(v||'·')+'</td>').join('')+'<td class="yt">'+sumArr(arr)+'</td></tr>';
+  return '<tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow(otherName(),cnt.other)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',monthTotals(cnt),'total')+'</tfoot>';
+}
+function renderYearStats(Y,cnt){
+  const YD=daysInYear(Y),T=sumArr(monthTotals(cnt));
+  const tgt=+S.target||0,ann=+S.announced||0,diff=tgt-T;
   const pct=tgt?Math.min(100,T/tgt*100):0,apct=tgt?Math.min(100,ann/tgt*100):0;
   const ys=$('ystats');ys.innerHTML=
     '<div class="stat"><div class="lab"><label for="tgt">年總應休日數</label></div><input id="tgt" type="number" min="0" value="'+tgt+'"></div>'+
     '<div class="stat"><div class="lab"><label for="ann">人事總處公告</label></div><input id="ann" type="number" min="0" value="'+ann+'"></div>'+
     '<div class="stat"><div class="lab">已排月總休假</div><div class="val">'+T+'<small class="of">/'+YD+'<span class="pct">'+Math.round(T/YD*100)+'%</span></small></div><div class="meter" title="黑線為人事總處公告日數"><i data-js="meter-fill"></i><b data-js="meter-mark"></b></div></div>'+
-    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val'+(diff>=0?'':' val--over')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sum(cnt.rest)+' ＋ 補休 '+sum(cnt.comp)+' ＋ '+esc(otherCell())+' '+sum(cnt.other)+'</div></div>';
+    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val'+(diff>=0?'':' val--over')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sumArr(cnt.rest)+' ＋ 補休 '+sumArr(cnt.comp)+' ＋ '+esc(otherCell())+' '+sumArr(cnt.other)+'</div></div>';
   ys.querySelector('[data-js="meter-fill"]').style.width=pct+'%';
   ys.querySelector('[data-js="meter-mark"]').style.left=apct+'%';
+}
+function renderYear(){
+  const Y=S.year;$('yearLabel').value=Y+' 年';
+  const body=buildYearBody(Y);
+  $('ygrid').innerHTML=buildYearHead()+body.html+buildYearFoot(body.cnt);
+  renderYearStats(Y,body.cnt);
 }
 $('ystats').addEventListener('change',e=>{if(e.target.id==='tgt')S.target=+e.target.value;if(e.target.id==='ann')S.announced=+e.target.value;save();renderYear();});
 const yg=$('ygrid');

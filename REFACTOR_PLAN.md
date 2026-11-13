@@ -105,7 +105,8 @@
   - 做法：新增單一 `syncStatus`（`'idle' | 'loading' | 'success' | 'error'`，另加唯讀），狀態字串集中為常數；訊息只負責顯示。
   - 驗證：TEST_CHECKLIST「雲端同步」全部
 
-- [ ] #14【風險：中】`renderYear`、`renderRoster` 過於密集
+- [x] #14【風險：中】`renderYear`、`renderRoster` 過於密集
+  - 完成：2026-11-13。拆成 `buildRosterHead`／`buildDayRow`／`buildShiftCell`／`buildRosterFoot` 與 `buildYearHead`／`buildYearBody`／`buildYearCell`／`buildYearFoot`／`renderYearStats` 等小函式（最長 16 行）。6 個月班表與 2 個年度的 HTML 快照拆分前後一字不差；截圖、同步、鎖定測試皆通過。
   - 檔案：index.html 第 579（renderRoster，約 2,200 字元）、694（renderYear，約 2,800 字元）行
   - 問題：行數雖不到 40 行，但每行塞滿多個敘述，換行排版後明顯超過 40 行，難以修改。
   - 做法：各拆成表頭、表身、表尾、統計等小函式，輸出的 HTML 完全相同。
