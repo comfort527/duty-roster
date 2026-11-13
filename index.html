@@ -21,7 +21,6 @@
 /* Layout: 勤務板 — sticky top bar (title + view tabs), tool strip, then the working grid; summary chips sit above each grid */
 
 *{box-sizing:border-box}
-[hidden]{display:none!important}
 /* 只給螢幕閱讀器讀、畫面上不顯示 */
 .visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.55}
@@ -126,13 +125,14 @@ table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-num
 .roster tr.we td{background:var(--wk-row)}
 .roster tr.today th.c-date{box-shadow:inset 0 0 0 2px var(--alert)}
 td.cell{width:60px;min-width:56px;height:28px;cursor:pointer;user-select:none;-webkit-user-select:none}
-td.cell.is-off{background:var(--off-cell)!important}
+.roster tr td.cell.is-off{background:var(--off-cell)}
 td.cell:hover{box-shadow:inset 0 0 0 1px var(--line-strong)}
 td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .nm{width:60px;border:0;border-bottom:1px dashed var(--line-strong);background:transparent;text-align:center;font-weight:700;font-size:13px;padding:2px 0}
 .nm.me{color:var(--accent)}
 .offsel{margin-top:6px;width:60px;font-size:11px;font-family:var(--font-data);border:1px solid var(--line);border-radius:5px;background:var(--surface);padding:1px 2px}
-.c-note{min-width:109px;text-align:left!important}
+.c-note{min-width:109px}
+.roster .c-note{text-align:left}
 .roster thead .c-note{text-align:left;font-size:12px;color:var(--muted);font-weight:500}
 .notesel{display:none}
 .otherform{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
@@ -212,7 +212,8 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .year tr.we td,.year tr.we th{background:var(--wk-row)}
 .year tr.sat td,.year tr.sat th{border-top:2px solid color-mix(in srgb,var(--wk-ink) 55%,transparent)}
 .year tr.sun td,.year tr.sun th{border-bottom:2px solid color-mix(in srgb,var(--wk-ink) 55%,transparent)}
-.yc{width:44px;height:24px;padding:1px!important}
+.yc{width:44px;height:24px}
+.year .yc{padding:1px}
 .yd{display:flex;align-items:center;justify-content:center;height:100%;border-radius:3px;font-family:var(--font-data);font-size:12px;font-weight:600;cursor:pointer;background:var(--y-none);color:var(--y-none-ink);position:relative}
 .yd:hover{box-shadow:inset 0 0 0 1.5px var(--sel)}
 .we .yd{text-decoration:underline;text-underline-offset:2px}
@@ -263,14 +264,14 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .bnav a[aria-current="page"]{color:var(--accent);font-weight:700}
   .bnav svg{width:22px;height:22px}
   .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))}
-  html.view-tools #view-roster{display:none!important}
+  html.view-tools #view-roster{display:none}
   html:not(.view-tools) aside.panel{display:none}
   .panel-head,.opsbar{display:none}
   .roster .hn{display:none}
 
   .lockbtn .txt{display:none}
   main{padding-block:12px calc(76px + env(safe-area-inset-bottom,0px));gap:12px}
-  #view-roster > div{gap:10px!important}
+  #view-roster > div{gap:10px}
   .tools{gap:6px}
   .tools>.brushbar{flex:1 1 100%}
   .monthnav output{font-size:14px;min-width:6.4em}
@@ -295,12 +296,11 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .roster .c-date{width:36px;padding:0 2px}
   .roster tfoot th,.roster tfoot td{bottom:calc(56px + env(safe-area-inset-bottom,0px))}
   .roster thead th:not(.c-date):not(.c-note){width:39.5px}
-  .c-note{min-width:0;padding:0 3px!important;cursor:pointer}
-  .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2;padding:6px 1px 4px!important}
+  .c-note{min-width:0;cursor:pointer}
+  .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2;padding:6px 1px 4px}
   .roster[data-nv="0"] .c-note:not(.n0),.roster[data-nv="1"] .c-note:not(.n1),.roster[data-nv="2"] .c-note:not(.n2){display:none}
   .roster thead .c-note .nlab{display:none}
   .notesel{display:block;width:100%;font-size:10px;padding:0;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-family:var(--font-body)}
-  .c-note{padding:0!important}
   .note-in{height:25px;font-size:10.5px;line-height:1.15;padding:1px 3px 0;word-break:break-all}
   .dn{min-width:1.25em;font-size:13px}
   .dw{margin-left:1px;font-size:10px}
