@@ -141,7 +141,8 @@
   - 做法：未設定 Token 時，在雲端同步區塊加一顆「重新載入」按鈕呼叫 `pullPublic`（會新增一顆按鈕，動手前先確認外觀）。
   - 驗證：斷網開啟頁面 → 恢復網路後按「重新載入」→ 同步燈恢復「唯讀」；TEST_CHECKLIST「唯讀載入」
 
-- [ ] #19【風險：低】`<title>`、`<meta>`、字型 `<link>` 寫在 `<body>` 裡
+- [x] #19【風險：低】`<title>`、`<meta>`、字型 `<link>` 寫在 `<body>` 裡
+  - 完成：2026-11-13。5 行移到 `<head>`；依使用者決定保留 `claude:viewport-fit-sides`。分頁標題、字型載入正常，截圖一致。（主要 `<style>` 仍在 `<body>`，由 #17 拆檔一併處理）
   - 檔案：index.html 第 15–19 行
   - 問題：`<title>勤休輪值簿</title>`、`<meta name="claude:viewport-fit-sides">`、Google 字型的兩個 `preconnect` 與樣式表 `<link>` 位於 `<body>` 開頭，不符合 HTML 規範（瀏覽器目前能容錯）。`<meta name="claude:viewport-fit-sides">` 是 Claude 預覽頁專用，GitHub Pages 用不到。
   - 做法：把這幾行移到 `<head>`；`claude:viewport-fit-sides` 先問使用者要不要刪除。
