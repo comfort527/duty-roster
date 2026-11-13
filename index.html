@@ -155,6 +155,14 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .panel-head{display:flex;align-items:center;justify-content:space-between}
 .panel-head .ptitle{font-size:15px;color:var(--ink);font-weight:700;letter-spacing:.06em}
 .panel-scrim{display:none}
+.roster-main{display:grid;gap:12px;min-width:0}
+.view-year{display:grid;gap:14px}
+.panel__section{display:grid;gap:8px}
+.fill-months{gap:4px;font-size:13px}
+.fill-months__input{width:4.2em;padding:0 6px;text-align:center}
+.val--over{color:var(--alert)}
+.dot--ok{color:var(--accent)}
+.yd.opreview__abbr{display:inline-flex;width:24px;height:20px;border-radius:4px;align-items:center;justify-content:center;font-weight:700}
 .opsbar{margin-left:auto}
 .is-locked #opsBar{display:none}
 @media (min-width:641px){
@@ -170,7 +178,6 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   #lbrushes .brush .ls{display:flex;width:26px;height:22px;font-family:var(--font-body);font-size:12px;font-weight:700;text-decoration:none}
   #lbrushes .frame-brush .txt{display:none}
   #opsHome h2{display:none}
-  #opsHome{display:contents}
   aside.panel{display:none;position:fixed;z-index:31;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));
     width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;box-shadow:var(--shadow-panel)}
   html.panel-open aside.panel{display:grid}
@@ -325,7 +332,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 
   <!-- 月班表 -->
   <section id="view-roster" class="split">
-    <div style="display:grid;gap:12px;min-width:0">
+    <div class="roster-main">
       <div class="tools" id="rtools">
         <div class="monthnav">
           <button class="ibtn" id="prevM" type="button" aria-label="上個月">‹</button>
@@ -350,20 +357,20 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   <div class="panel-scrim" id="panelScrim"></div>
   <aside class="panel" id="panel" aria-label="設定">
       <div class="panel-head"><h2 class="ptitle">設定</h2><button class="ibtn" id="panelClose" type="button" aria-label="關閉設定">×</button></div>
-      <div style="display:grid;gap:8px" id="opsHome">
+      <div class="panel__section" id="opsHome">
         <h2 id="opsTitle">本月操作</h2>
         <div class="group" id="opsGroup">
           <button class="btn primary" id="fillBtn" type="button">依輪序填入</button>
-          <label class="group" for="fillN" style="gap:4px;font-size:13px">本月起<input id="fillN" type="number" min="1" max="24" step="1" class="btn" style="width:4.2em;padding:0 6px;text-align:center">個月</label>
+          <label class="group fill-months" for="fillN">本月起<input id="fillN" type="number" min="1" max="24" step="1" class="btn fill-months__input">個月</label>
           <button class="btn" id="clearBtn" type="button">清空本月</button>
         </div>
       </div>
-      <div style="display:grid;gap:8px" id="seqBox">
+      <div class="panel__section" id="seqBox">
         <h2>輪序</h2>
         <div class="seq" id="seq"></div>
         <div class="group"><span class="glabel">加入</span><span id="seqAdd" class="group"></span></div>
       </div>
-      <div style="display:grid;gap:8px" id="otherBox">
+      <div class="panel__section" id="otherBox">
         <h2>其他假</h2>
         <div class="otherform">
           <label for="otherName">名稱</label><input type="text" id="otherName" maxlength="6" autocomplete="off" placeholder="其他假">
@@ -371,7 +378,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
           <span class="lb">預覽</span><div class="opreview" id="otherPrev"></div>
         </div>
       </div>
-      <div style="display:grid;gap:8px" id="syncBox">
+      <div class="panel__section" id="syncBox">
         <h2>雲端同步</h2>
         <div class="group" id="syncRow"></div>
         <form id="syncForm" class="syncform" hidden>
@@ -386,7 +393,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   </aside>
 
   <!-- 年度休假 -->
-  <section id="view-year" hidden style="display:grid;gap:14px">
+  <section id="view-year" class="view-year" hidden>
     <div class="tools" id="ytools">
       <div class="monthnav">
         <button class="ibtn" id="prevY" type="button" aria-label="前一年">‹</button>
@@ -699,11 +706,13 @@ function renderYear(){
   const YD=((Y%4===0&&Y%100!==0)||Y%400===0)?366:365;
   const T=sum(total),tgt=+S.target||0,ann=+S.announced||0,diff=tgt-T;
   const pct=tgt?Math.min(100,T/tgt*100):0,apct=tgt?Math.min(100,ann/tgt*100):0;
-  $('ystats').innerHTML=
+  const ys=$('ystats');ys.innerHTML=
     '<div class="stat"><div class="lab"><label for="tgt">年總應休日數</label></div><input id="tgt" type="number" min="0" value="'+tgt+'"></div>'+
     '<div class="stat"><div class="lab"><label for="ann">人事總處公告</label></div><input id="ann" type="number" min="0" value="'+ann+'"></div>'+
-    '<div class="stat"><div class="lab">已排月總休假</div><div class="val">'+T+'<small class="of">/'+YD+'<span class="pct">'+Math.round(T/YD*100)+'%</span></small></div><div class="meter" title="黑線為人事總處公告日數"><i style="width:'+pct+'%"></i><b style="left:'+apct+'%"></b></div></div>'+
-    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val" style="color:'+(diff>=0?'var(--ink)':'var(--alert)')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sum(cnt.rest)+' ＋ 補休 '+sum(cnt.comp)+' ＋ '+esc(otherCell())+' '+sum(cnt.other)+'</div></div>';
+    '<div class="stat"><div class="lab">已排月總休假</div><div class="val">'+T+'<small class="of">/'+YD+'<span class="pct">'+Math.round(T/YD*100)+'%</span></small></div><div class="meter" title="黑線為人事總處公告日數"><i data-js="meter-fill"></i><b data-js="meter-mark"></b></div></div>'+
+    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val'+(diff>=0?'':' val--over')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sum(cnt.rest)+' ＋ 補休 '+sum(cnt.comp)+' ＋ '+esc(otherCell())+' '+sum(cnt.other)+'</div></div>';
+  ys.querySelector('[data-js="meter-fill"]').style.width=pct+'%';
+  ys.querySelector('[data-js="meter-mark"]').style.left=apct+'%';
 }
 $('ystats').addEventListener('change',e=>{if(e.target.id==='tgt')S.target=+e.target.value;if(e.target.id==='ann')S.announced=+e.target.value;save();renderYear();});
 const yg=$('ygrid');
@@ -768,9 +777,10 @@ function applyOtherCfg(){
   LM['其他'].n=n;CM['其他'].d=n;const yt=YT.find(t=>t.k==='other');if(yt)yt.n=n;ABBR.other=otherCell().slice(0,1);
   document.documentElement.style.setProperty('--y-other',c);document.documentElement.style.setProperty('--y-other-ink',inkFor(c));
   const inp=$('otherName');if(document.activeElement!==inp)inp.value=(S.other&&S.other.name)||'';
-  $('otherSw').innerHTML=OTHER_COLORS.map(x=>'<button type="button" class="osw" data-c="'+x+'" style="background:'+x+'" aria-label="顏色 '+x+'" aria-pressed="'+(x.toLowerCase()===c.toLowerCase())+'"></button>').join('')+
+  $('otherSw').innerHTML=OTHER_COLORS.map(x=>'<button type="button" class="osw" data-c="'+x+'" aria-label="顏色 '+x+'" aria-pressed="'+(x.toLowerCase()===c.toLowerCase())+'"></button>').join('')+
     '<label class="visually-hidden" for="otherColor">自訂顏色</label><input type="color" id="otherColor" value="'+c+'" title="自訂顏色">';
-  $('otherPrev').innerHTML='格子 '+chip('其他')+'　縮寫 <span class="yd t-other" style="display:inline-flex;width:24px;height:20px;border-radius:4px;align-items:center;justify-content:center;font-weight:700">'+esc(ABBR.other)+'</span>';
+  $('otherSw').querySelectorAll('.osw').forEach(b=>{b.style.background=b.dataset.c;});
+  $('otherPrev').innerHTML='格子 '+chip('其他')+'　縮寫 <span class="yd t-other opreview__abbr">'+esc(ABBR.other)+'</span>';
 }
 function setOther(patch){S.other=Object.assign({},S.other||{},patch);save();renderAll();}
 $('otherName').addEventListener('input',e=>{if(!editMode)return;setOther({name:e.target.value.trim()});});
@@ -820,7 +830,7 @@ function errMsg(st){return st===401?'Token 無效或已過期，請重新設定�
 function renderSync(){
   const on=!!(gh&&gh.token&&gh.repo);
   $('syncRow').innerHTML=on
-    ?'<span class="pill"><span class="dot" style="color:var(--accent)"></span>'+esc(gh.repo)+'</span><button class="btn" id="syncNow" type="button">立即同步</button><button class="btn" id="syncEdit" type="button">設定</button>'
+    ?'<span class="pill"><span class="dot dot--ok"></span>'+esc(gh.repo)+'</span><button class="btn" id="syncNow" type="button">立即同步</button><button class="btn" id="syncEdit" type="button">設定</button>'
     :'<button class="btn primary" id="syncEdit" type="button">設定 GitHub 同步</button>';
   $('syncEdit').onclick=()=>{const f=$('syncForm');f.hidden=!f.hidden;if(!f.hidden){$('ghRepo').value=(gh&&gh.repo)||PUBLIC_REPO;$('ghToken').value=(gh&&gh.token)||'';}};
   if(on)$('syncNow').onclick=()=>pull(true);

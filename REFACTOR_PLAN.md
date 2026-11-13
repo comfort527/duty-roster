@@ -66,7 +66,8 @@
   - 做法：改用視覺隱藏的 `<label for>`，畫面不變。
   - 驗證：TEST_CHECKLIST「人員姓名」「勤務註記」「手機註記欄切換」「鍵盤操作」
 
-- [ ] #9【風險：低】inline `style="..."`（12 處）
+- [x] #9【風險：低】inline `style="..."`（12 處）
+  - 完成：2026-11-13。固定樣式改為 class（`.roster-main`、`.panel__section`、`.fill-months`、`.view-year`、`.val--over`、`.dot--ok`、`.opreview__abbr`）；進度條與色票等動態值改由 JS 設定。順帶刪除從未生效的 `#opsHome{display:contents}` 以維持原畫面。inline style 屬性為 0，截圖與基準一致。
   - 檔案：index.html 第 366、391、395、399、404、412、427、725、726、790、792、842 行
   - 問題：版面容器、本月起輸入框、同步燈點、年度統計顏色等使用 inline style。
   - 做法：逐一改成 class，樣式移到 `<style>`。依賴 #5。
