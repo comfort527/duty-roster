@@ -899,8 +899,14 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState!==
 async function pullPublic(){
   if(gh)return;
   try{const r=await fetch('https://raw.githubusercontent.com/'+PUBLIC_REPO+'/'+DATA_BRANCH+'/'+DATA_PATH+'?t='+Date.now(),{cache:'no-store'});
-    if(!r.ok)return;const t=await r.text();if(t!==pubText){pubText=t;applyRemote(t);}setSync('唯讀：已載入 GitHub 上的班表 '+hhmm()+'。設定 Token 後才能上傳修改。');}
-  catch(e){}
+    if(r.status===404)return;   // 雲端還沒有資料：維持本機班表，不提示
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const t=await r.text();if(t!==pubText){pubText=t;applyRemote(t);}setSync('唯讀：已載入 GitHub 上的班表 '+hhmm()+'。設定 Token 後才能上傳修改。');}
+  catch(e){
+    console.error('唯讀載入失敗',e);
+    const why=e instanceof TypeError?'連不到 GitHub':(e?.message??'連不到 GitHub');
+    setSync('唯讀載入失敗（'+why+'），畫面可能不是最新班表；稍後會自動重試。',true);
+  }
 }
 renderSync();startSync();
 })();
