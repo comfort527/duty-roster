@@ -180,10 +180,33 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .note-in:focus{outline:2px solid var(--sel);outline-offset:-2px;background:var(--surface)}
 
 /* side panel */
-.split{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:16px;align-items:start}
-@media (max-width:900px){.split{grid-template-columns:minmax(0,1fr)}}
+.split{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:14px;min-width:0}
 .panel h2{font-size:13px;letter-spacing:.1em;color:var(--muted);margin:0;font-weight:500}
+.panel-head{display:flex;align-items:center;justify-content:space-between}
+.panel-head .ptitle{font-size:15px;color:var(--ink);font-weight:700;letter-spacing:.06em}
+.panel-scrim{display:none}
+.opsbar{margin-left:auto}
+.is-locked #opsBar{display:none}
+@media (min-width:641px){
+  #rtools .synclight{margin-left:auto}
+  #rtools .brushbar{flex-basis:100%;gap:10px 18px}
+  .is-editing #rtools .brushbar{background:var(--accent-soft);border-radius:10px;padding:8px 10px}
+  #rtools .brushbar .group{gap:4px}
+  #rtools .brushbar .brush{min-width:34px;padding:0 3px}
+  #rtools .brushbar .chip{min-width:26px}
+  #rtools .brushbar .brush .txt{padding:0 2px}
+  #rtools .brushbar .glabel{margin-right:0}
+  #lbrushes .brush .lf{display:none}
+  #lbrushes .brush .ls{display:flex;width:26px;height:22px;font-family:var(--font-body);font-size:12px;font-weight:700;text-decoration:none}
+  #lbrushes .frame-brush .txt{display:none}
+  #opsHome h2{display:none}
+  #opsHome{display:contents}
+  aside.panel{display:none;position:fixed;z-index:31;top:max(16px,env(safe-area-inset-top,0px));right:max(16px,env(safe-area-inset-right,0px));
+    width:min(380px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;box-shadow:0 14px 44px rgb(0 0 0 / .28)}
+  html.panel-open aside.panel{display:grid}
+  html.panel-open .panel-scrim{display:block;position:fixed;inset:0;z-index:30;background:rgb(10 20 15 / .28)}
+}
 .legend{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center}
 .legend input{width:100%;min-width:0;border:1px solid var(--line);border-radius:6px;background:var(--bg);padding:3px 8px;font-size:13px}
 .seq{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
@@ -264,8 +287,9 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .bnav a[aria-current="page"]{color:var(--accent);font-weight:700}
   .bnav svg{width:22px;height:22px}
   .toast{bottom:calc(70px + env(safe-area-inset-bottom,0px))}
-  html.view-tools #view-roster > div:first-child{display:none!important}
-  html:not(.view-tools) #view-roster > aside{display:none}
+  html.view-tools #view-roster{display:none!important}
+  html:not(.view-tools) aside.panel{display:none}
+  .panel-head,.opsbar{display:none}
   .roster .hn{display:none}
 
   .lockbtn .txt{display:none}
@@ -346,21 +370,26 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         <div class="brushbar">
           <div class="group" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
           <div class="group" id="lbrushes" role="toolbar" aria-label="假別畫筆"><span class="glabel">假別</span></div>
+          <div class="group opsbar" id="opsBar"><button class="btn" id="seqBtn" type="button">輪序設定</button></div>
         </div>
       </div>
       <div class="sum" id="rsum" hidden></div>
       <div class="gridwrap" id="rgridwrap"><table class="roster" id="rgrid"></table></div>
     </div>
-    <aside class="panel">
-      <div style="display:grid;gap:8px">
+  </section>
+
+  <div class="panel-scrim" id="panelScrim"></div>
+  <aside class="panel" id="panel" aria-label="設定">
+      <div class="panel-head"><h2 class="ptitle">設定</h2><button class="ibtn" id="panelClose" type="button" aria-label="關閉設定">×</button></div>
+      <div style="display:grid;gap:8px" id="opsHome">
         <h2 id="opsTitle">本月操作</h2>
-        <div class="group">
+        <div class="group" id="opsGroup">
           <button class="btn primary" id="fillBtn" type="button">依輪序填入</button>
           <label class="group" for="fillN" style="gap:4px;font-size:13px">本月起<input id="fillN" type="number" min="1" max="24" step="1" class="btn" style="width:4.2em;padding:0 6px;text-align:center">個月</label>
           <button class="btn" id="clearBtn" type="button">清空本月</button>
         </div>
       </div>
-      <div style="display:grid;gap:8px">
+      <div style="display:grid;gap:8px" id="seqBox">
         <h2>輪序</h2>
         <div class="seq" id="seq"></div>
         <div class="group"><span class="glabel">加入</span><span id="seqAdd" class="group"></span></div>
@@ -377,8 +406,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
         </form>
         <p class="hint" id="syncMsg"></p>
       </div>
-    </aside>
-  </section>
+  </aside>
 
   <!-- 年度休假 -->
   <section id="view-year" hidden style="display:grid;gap:14px">
@@ -700,7 +728,18 @@ function route(){
   document.querySelectorAll('[data-tab]').forEach(a=>{const on=a.dataset.tab===v||(v==='tools'&&a.dataset.tab==='roster'&&!a.closest('.bnav'));
     if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   if(v==='year')renderYear();
+  if(v==='tools'&&!isPhoneW())openPanel('seqBox');
 }
+const isPhoneW=()=>matchMedia('(max-width:640px)').matches;
+function openPanel(target){document.documentElement.classList.add('panel-open');const el=target&&$(target);if(el)setTimeout(()=>el.scrollIntoView({block:'nearest'}),20);}
+function closePanel(){document.documentElement.classList.remove('panel-open');if(location.hash==='#tools')history.replaceState(null,'','#roster');}
+$('panelClose').onclick=closePanel;$('panelScrim').onclick=closePanel;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.documentElement.classList.contains('panel-open'))closePanel();});
+$('seqBtn').onclick=()=>openPanel('seqBox');
+// 電腦版：本月操作按鈕放在第二條工具帶；手機版：放回「設定」頁
+function placeOps(){const g=$('opsGroup');if(isPhoneW()){if(g.parentElement!==$('opsHome'))$('opsHome').appendChild(g);}else if(g.parentElement!==$('opsBar'))$('opsBar').insertBefore(g,$('seqBtn'));}
+matchMedia('(max-width:640px)').addEventListener('change',()=>{placeOps();if(isPhoneW())document.documentElement.classList.remove('panel-open');});
+placeOps();
 
 /* ---------- 鎖定／編輯模式：預設鎖定，按「開始編輯」才能修改 ---------- */
 let editMode=false;
@@ -739,8 +778,8 @@ $('todayBtn').onclick=()=>{const t=new Date();if(location.hash==='#tools')locati
   cur={y:t.getFullYear(),m:t.getMonth()+1};lastCell=null;renderRoster();requestAnimationFrame(()=>scrollToToday(true));};
 if(cur.y===now.getFullYear()&&cur.m===now.getMonth()+1)setTimeout(()=>scrollToToday(false),60);
 document.addEventListener('click',e=>{if(!e.target.closest('[data-sync]'))return;
-  if(matchMedia('(max-width:640px)').matches&&location.hash!=='#tools')location.hash='#tools';
-  setTimeout(()=>$('syncBox').scrollIntoView({behavior:'smooth',block:'center'}),50);});
+  if(isPhoneW()){if(location.hash!=='#tools')location.hash='#tools';setTimeout(()=>$('syncBox').scrollIntoView({behavior:'smooth',block:'center'}),50);}
+  else openPanel('syncBox');});
 if(window.ResizeObserver){const ro=new ResizeObserver(es=>es.forEach(en=>{const el=en.target;document.documentElement.style.setProperty('--'+el.id+'H',(el.offsetHeight||0)+'px');}));ro.observe($('rtools'));ro.observe($('ytools'));}
 
 /* ---------- 雲端同步（GitHub：把班表存成私人 repo 裡的 data.json） ---------- */
