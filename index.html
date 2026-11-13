@@ -8,6 +8,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-title" content="勤休輪值簿">
 <meta name="theme-color" content="#edf1ee">
+<link rel="stylesheet" href="css/tokens.css">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -18,51 +19,6 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@700&family=IBM+Plex+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <style>
 /* Layout: 勤務板 — sticky top bar (title + view tabs), tool strip, then the working grid; summary chips sit above each grid */
-:root{
-  --bg:#edf1ee; --surface:#fbfcfb; --ink:#15201a; --muted:#59685f; --line:#d4ddd7; --line-strong:#a9b7af;
-  --accent:#1d6b47; --accent-ink:#ffffff; --accent-soft:#dcece3;
-  --wk-ink:#a85a08; --wk-bg:#f9ecd9; --wk-row:#fdf7ee;
-  --alert:#c0352b; --alert-soft:#fbe4e1;
-  --duty-bg:#15201a; --duty-ink:#ffffff;
-  --p1-bg:#dce7f7; --p1-ink:#22508f;
-  --p2-bg:#e9e1f6; --p2-ink:#5a3a8e;
-  --t3-bg:#d8eeec; --t3-ink:#1d6460;
-  --n-bg:#e8ece9; --n-ink:#36423b;
-  --off-cell:#c4e2cd;
-  --y-rest:#2c8754; --y-comp:#7b873a; --y-stop:#e08bcd; --y-other:#2f9fd0; --y-train:#56616b;
-  --y-work:#ffffff; --y-work-ink:#15201a; --y-none:#e1e7e3; --y-none-ink:#8b978f; --y-on-ink:#ffffff;
-  --today:#e9b22f; --sel:#2f6fd6; --busy:#d98a1c;
-  --shadow-tab:0 1px 2px rgb(0 0 0 / .12); --shadow-panel:0 14px 44px rgb(0 0 0 / .28); --scrim:rgb(10 20 15 / .28);
-  --on-light-ink:#15201a;
-  --other-preset-1:#2f9fd0; --other-preset-2:#e07a3b; --other-preset-3:#8e5cc4; --other-preset-4:#c94f7c; --other-preset-5:#3aa38f; --other-preset-6:#b08a2e; --other-preset-7:#6b7a8f; --note1:#eaf2fb; --note2:#fdf4e1;
-  --font-display:"Chiron Sung HK","Noto Serif TC","Songti TC",serif;
-  --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
-  --font-data:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
-}
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#0e1411; --surface:#151d19; --ink:#e4ebe6; --muted:#90a097; --line:#25312b; --line-strong:#3b4942;
-  --accent:#55c08a; --accent-ink:#0b1410; --accent-soft:#18301f;
-  --wk-ink:#f1a957; --wk-bg:#2c2216; --wk-row:#19170f;
-  --alert:#ff7f70; --alert-soft:#3a1c18;
-  --duty-bg:#e4ebe6; --duty-ink:#0e1411;
-  --p1-bg:#1c2b43; --p1-ink:#9fc2f6; --p2-bg:#2a2140; --p2-ink:#cbb5f3;
-  --t3-bg:#163432; --t3-ink:#88d7cf; --n-bg:#212b26; --n-ink:#c3cec8; --off-cell:#1f4630;
-  --y-rest:#2f8a57; --y-comp:#7d8a3a; --y-stop:#c06aab; --y-other:#2a8cbb; --y-train:#4b5660;
-  --y-work:#d6dfda; --y-work-ink:#101713; --y-none:#1b2420; --y-none-ink:#56645c; --y-on-ink:#ffffff;
-  --today:#f2c14e; --sel:#6ea2ff; --note1:#172433; --note2:#2a2415; color-scheme:dark;
-}}
-:root[data-theme="dark"]{
-  --bg:#0e1411; --surface:#151d19; --ink:#e4ebe6; --muted:#90a097; --line:#25312b; --line-strong:#3b4942;
-  --accent:#55c08a; --accent-ink:#0b1410; --accent-soft:#18301f;
-  --wk-ink:#f1a957; --wk-bg:#2c2216; --wk-row:#19170f;
-  --alert:#ff7f70; --alert-soft:#3a1c18;
-  --duty-bg:#e4ebe6; --duty-ink:#0e1411;
-  --p1-bg:#1c2b43; --p1-ink:#9fc2f6; --p2-bg:#2a2140; --p2-ink:#cbb5f3;
-  --t3-bg:#163432; --t3-ink:#88d7cf; --n-bg:#212b26; --n-ink:#c3cec8; --off-cell:#1f4630;
-  --y-rest:#2f8a57; --y-comp:#7d8a3a; --y-stop:#c06aab; --y-other:#2a8cbb; --y-train:#4b5660;
-  --y-work:#d6dfda; --y-work-ink:#101713; --y-none:#1b2420; --y-none-ink:#56645c; --y-on-ink:#ffffff;
-  --today:#f2c14e; --sel:#6ea2ff; --note1:#172433; --note2:#2a2415; color-scheme:dark;
-}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}

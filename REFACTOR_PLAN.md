@@ -43,7 +43,8 @@
   - 做法：在 `:root` 新增 `--shadow-*`、`--scrim`、`--other-presets` 等變數，規則改用變數；JS 預設色改從常數讀取。外觀不變。
   - 驗證：淺色與深色模式各截圖比對；TEST_CHECKLIST「深色模式」「其他假顏色」
 
-- [ ] #6【風險：中】抽出 `css/tokens.css`
+- [x] #6【風險：中】抽出 `css/tokens.css`
+  - 完成：2026-11-13。三段設計變數（54 個）搬到 `css/tokens.css`，`<head>` 以 `<link>` 引用；系統深色、手動深色、手動淺色在 375／1280 改前改後截圖相同，其他假預設色仍讀得到，基準截圖一致。
   - 檔案：index.html、新增 css/tokens.css
   - 問題：所有設計變數（約 50 個，含深色模式三個區塊）寫在 index.html 的 `<style>` 內。
   - 做法：把 `:root` 與兩個深色模式區塊搬到 `css/tokens.css`，index.html 以 `<link>` 引用。依賴 #5。
@@ -131,3 +132,9 @@
   - 問題：規則要求錯誤畫面要有重試按鈕；目前未設定 Token 的裝置載入失敗時只會顯示訊息，要等 60 秒自動重試或切回頁面。
   - 做法：未設定 Token 時，在雲端同步區塊加一顆「重新載入」按鈕呼叫 `pullPublic`（會新增一顆按鈕，動手前先確認外觀）。
   - 驗證：斷網開啟頁面 → 恢復網路後按「重新載入」→ 同步燈恢復「唯讀」；TEST_CHECKLIST「唯讀載入」
+
+- [ ] #19【風險：低】`<title>`、`<meta>`、字型 `<link>` 寫在 `<body>` 裡
+  - 檔案：index.html 第 15–19 行
+  - 問題：`<title>勤休輪值簿</title>`、`<meta name="claude:viewport-fit-sides">`、Google 字型的兩個 `preconnect` 與樣式表 `<link>` 位於 `<body>` 開頭，不符合 HTML 規範（瀏覽器目前能容錯）。`<meta name="claude:viewport-fit-sides">` 是 Claude 預覽頁專用，GitHub Pages 用不到。
+  - 做法：把這幾行移到 `<head>`；`claude:viewport-fit-sides` 先問使用者要不要刪除。
+  - 驗證：375／1280 截圖與基準一致；瀏覽器分頁標題仍為「勤休輪值簿」；字型正常載入
