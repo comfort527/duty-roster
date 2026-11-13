@@ -568,7 +568,7 @@ function renderBrushes(){
     b.onclick=()=>{brush=it.k;renderBrushes();};g.appendChild(b);});
   const lg=$('lbrushes');lg.querySelectorAll('button').forEach(b=>b.remove());
   LEAVES.filter(l=>l.t!=='work').forEach(l=>{const b=document.createElement('button');b.type='button';b.className='brush';
-    b.innerHTML='<span class="yd t-'+l.t+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+l.n+'</span><span class="yd t-'+l.t+' ls" aria-hidden="true">'+ABBR[l.t]+'</span>';b.setAttribute('aria-label',l.n);
+    b.innerHTML='<span class="yd t-'+l.t+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+esc(l.n)+'</span><span class="yd t-'+l.t+' ls" aria-hidden="true">'+esc(ABBR[l.t])+'</span>';b.setAttribute('aria-label',l.n);
     b.setAttribute('aria-pressed',brush===l.k);b.title='畫筆：'+l.n;
     b.onclick=()=>{brush=l.k;renderBrushes();};lg.appendChild(b);});
   [['F:r','r','紅框'],['F:k','k','黑框']].forEach(([k,c,n])=>{const b=document.createElement('button');b.type='button';b.className='brush frame-brush';
@@ -684,7 +684,7 @@ function yType(y,m,d){
 function renderYBrushes(){
   const g=$('ybrushes');g.querySelectorAll('button').forEach(b=>b.remove());
   YT.filter(t=>t.k!=='work').concat([{k:'auto',n:'自動'}]).forEach(t=>{const b=document.createElement('button');b.type='button';b.className='brush';
-    b.innerHTML=t.k==='auto'?'<span class="txt">自動</span>':'<span class="yd t-'+t.k+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+t.n+'</span><span class="yd t-'+t.k+' ls" aria-hidden="true">'+ABBR[t.k]+'</span>';if(t.k!=='auto'){b.setAttribute('aria-label',t.n);b.title=t.n;}
+    b.innerHTML=t.k==='auto'?'<span class="txt">自動</span>':'<span class="yd t-'+t.k+' yd-sw lf" aria-hidden="true"></span><span class="txt lf">'+esc(t.n)+'</span><span class="yd t-'+t.k+' ls" aria-hidden="true">'+esc(ABBR[t.k])+'</span>';if(t.k!=='auto'){b.setAttribute('aria-label',t.n);b.title=t.n;}
     b.setAttribute('aria-pressed',ybrush===t.k);b.onclick=()=>{ybrush=t.k;renderYBrushes();};g.appendChild(b);});
 }
 function renderYearSel(){$('meSel').innerHTML=S.people.map((n,p)=>'<option value="'+p+'"'+(p===S.me?' selected':'')+'>'+esc(n)+'</option>').join('');}
@@ -706,13 +706,13 @@ function renderYear(){
       const t=yType(Y,m,d);if(t.t)cnt[t.t][m-1]++;
       const key=ds(Y,m,d);
       const hy=holName(Y,m,d);
-      h+='<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(key===TODAY?' today':'')+(hy?' hol':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+m+'/'+d+'（'+WD[w]+'）'+(hy?hy+'・':'')+(t.t?YT.find(x=>x.k===t.t).n:'未標記')+(t.auto?'・自動帶入':'')+'">'+d+'</div></td>';
+      h+='<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(key===TODAY?' today':'')+(hy?' hol':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+m+'/'+d+'（'+WD[w]+'）'+(hy?hy+'・':'')+(t.t?esc(YT.find(x=>x.k===t.t).n):'未標記')+(t.auto?'・自動帶入':'')+'">'+d+'</div></td>';
     }
     h+='<th class="wl" scope="row">'+WD[w]+'</th></tr>';
   }
   const sum=a=>a.reduce((x,y)=>x+y,0);
   const total=Array(12).fill(0).map((_,i)=>cnt.rest[i]+cnt.comp[i]+cnt.other[i]);
-  const frow=(lab,arr,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+lab+'</th>'+arr.map(v=>'<td>'+(v||'·')+'</td>').join('')+'<td class="yt">'+sum(arr)+'</td></tr>';
+  const frow=(lab,arr,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+esc(lab)+'</th>'+arr.map(v=>'<td>'+(v||'·')+'</td>').join('')+'<td class="yt">'+sum(arr)+'</td></tr>';
   h+='</tbody><tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow(otherName(),cnt.other)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',total,'total')+'</tfoot>';
   $('ygrid').innerHTML=h;
   // fix tfoot first col label width: the label th sits in the weekday column
