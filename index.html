@@ -563,17 +563,17 @@ function renderRoster(){
   S.people.forEach((nm,p)=>{
     let o='<option value="">手動</option>';
     for(let i=0;i<L;i++){const pos=mod(idx1+i,L);o+='<option value="'+i+'"'+(S.offsets[p]===i?' selected':'')+'>'+esc(seqLabel(pos))+'</option>';}
-    h+='<th scope="col"><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'" aria-label="第'+(p+1)+'位姓名">'+
-       '<select class="offsel" id="off-'+p+'" data-p="'+p+'" aria-label="'+esc(nm)+' 本月1日的輪序">'+o+'</select></th>';
+    h+='<th scope="col"><label class="visually-hidden" for="nm-'+p+'">第'+(p+1)+'位姓名</label><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'">'+
+       '<label class="visually-hidden" for="off-'+p+'">'+esc(nm)+' 本月1日的輪序</label><select class="offsel" id="off-'+p+'" data-p="'+p+'">'+o+'</select></th>';
   });
-  h+=NOTE_COLS.map((c,i)=>'<th scope="col" class="c-note n'+i+'"><span class="nlab">'+c.n+'</span><select class="notesel" id="nsel-'+i+'" data-n="'+i+'" aria-label="切換註記欄">'+NOTE_COLS.map((o,j)=>'<option value="'+j+'"'+(j===i?' selected':'')+'>'+o.s+'</option>').join('')+'</select></th>').join('')+'</tr></thead><tbody>';
+  h+=NOTE_COLS.map((c,i)=>'<th scope="col" class="c-note n'+i+'"><span class="nlab">'+c.n+'</span><label class="visually-hidden" for="nsel-'+i+'">切換註記欄</label><select class="notesel" id="nsel-'+i+'" data-n="'+i+'">'+NOTE_COLS.map((o,j)=>'<option value="'+j+'"'+(j===i?' selected':'')+'>'+o.s+'</option>').join('')+'</select></th>').join('')+'</tr></thead><tbody>';
   const NTS=NOTE_COLS.map(c=>(S[c.k]||{})[ym(cur.y,cur.m)]||{});
   for(let d=1;d<=n;d++){
     const w=wdOf(cur.y,cur.m,d),we=w>=5,td=ds(cur.y,cur.m,d)===TODAY;
     const hn=holName(cur.y,cur.m,d);
     h+='<tr data-d="'+d+'" class="'+(we?'we ':'')+(td?'today ':'')+(hn?'hol':'')+'"><th class="c-date" scope="row"'+(hn?' title="'+hn+'"':'')+'>'+(hn?'<span class="hn">'+hn+'</span>':'')+'<span class="dn">'+d+'</span><span class="dw">'+WD[w]+'</span></th>';
     S.people.forEach((_,p)=>{const c=getC(p,d);const F=getF(p,d);h+='<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(lastCell&&lastCell.p===p&&lastCell.d===d?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';});
-    h+=NOTE_COLS.map((c,i)=>'<td class="c-note n'+i+'"><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2" aria-label="'+cur.m+'/'+d+' '+c.n+'">'+esc(NTS[i][d]||'')+'</textarea></td>').join('')+'</tr>';
+    h+=NOTE_COLS.map((c,i)=>'<td class="c-note n'+i+'"><label class="visually-hidden" for="'+c.id+'-'+d+'">'+cur.m+'/'+d+' '+c.n+'</label><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2">'+esc(NTS[i][d]||'')+'</textarea></td>').join('')+'</tr>';
   }
   h+='</tbody><tfoot>'+
      '<tr><th scope="row">休假</th>'+S.people.map((_,p)=>'<td id="fo-'+p+'"></td>').join('')+NOTE_COLS.map((_,i)=>'<td class="c-note n'+i+'"></td>').join('')+'</tr></tfoot>';
@@ -769,7 +769,7 @@ function applyOtherCfg(){
   document.documentElement.style.setProperty('--y-other',c);document.documentElement.style.setProperty('--y-other-ink',inkFor(c));
   const inp=$('otherName');if(document.activeElement!==inp)inp.value=(S.other&&S.other.name)||'';
   $('otherSw').innerHTML=OTHER_COLORS.map(x=>'<button type="button" class="osw" data-c="'+x+'" style="background:'+x+'" aria-label="顏色 '+x+'" aria-pressed="'+(x.toLowerCase()===c.toLowerCase())+'"></button>').join('')+
-    '<input type="color" id="otherColor" value="'+c+'" aria-label="自訂顏色" title="自訂顏色">';
+    '<label class="visually-hidden" for="otherColor">自訂顏色</label><input type="color" id="otherColor" value="'+c+'" title="自訂顏色">';
   $('otherPrev').innerHTML='格子 '+chip('其他')+'　縮寫 <span class="yd t-other" style="display:inline-flex;width:24px;height:20px;border-radius:4px;align-items:center;justify-content:center;font-weight:700">'+esc(ABBR.other)+'</span>';
 }
 function setOther(patch){S.other=Object.assign({},S.other||{},patch);save();renderAll();}
