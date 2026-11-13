@@ -22,6 +22,8 @@
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+/* 只給螢幕閱讀器讀、畫面上不顯示 */
+.visually-hidden{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:14px;line-height:1.55}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -319,6 +321,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 </style>
 
 <main class="wrap">
+  <h1 class="visually-hidden">勤休輪值簿</h1>
 
   <!-- 月班表 -->
   <section id="view-roster" class="split">
