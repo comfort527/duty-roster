@@ -152,7 +152,8 @@
   - 做法：把這幾行移到 `<head>`；`claude:viewport-fit-sides` 先問使用者要不要刪除。
   - 驗證：375／1280 截圖與基準一致；瀏覽器分頁標題仍為「勤休輪值簿」；字型正常載入
 
-- [ ] #20【風險：低】刪除已經沒用到的 CSS 規則
+- [x] #20【風險：低】刪除已經沒用到的 CSS 規則
+  - 完成：2026-11-15（使用者已確認）。刪除 13 條：`.top`、`.top .wrap`（含手機版）、`.brand`、`.brand h1`（含手機版）、`.brand .yr`、`.note`、`.note b`、`.linkbtn`、`.legend`、`.legend input`、`.kbd`（`.bad` 先前已不存在）。components.css 296→287 行；淺色 8 張與三種主題 6 張截圖皆相同。
   - 檔案：css/components.css
   - 問題：舊功能移除後留下的樣式仍在：舊標題列 `.top`、`.top .wrap`（含手機版一條）、`.brand`、`.brand h1`、`.brand .yr`；示範資料提示 `.note`、`.note b`、`.linkbtn`；以及 `.kbd`、`.legend`、`.bad`。HTML 與 JS 都沒有使用。
   - 做法：逐條確認未使用後刪除（約 13 條），動手前列出清單給使用者確認。
