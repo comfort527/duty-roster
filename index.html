@@ -67,11 +67,19 @@
         <div class="group"><span class="glabel">加入</span><span id="seqAdd" class="group"></span></div>
       </div>
       <div class="panel__section" id="otherBox">
-        <h2>其他假</h2>
+        <h2>其他假 1</h2>
         <div class="otherform">
           <label for="otherName">名稱</label><input type="text" id="otherName" maxlength="6" autocomplete="off" placeholder="其他假">
           <span class="lb">顏色</span><div class="oswatches" id="otherSw"></div>
           <span class="lb">預覽</span><div class="opreview" id="otherPrev"></div>
+        </div>
+      </div>
+      <div class="panel__section" id="otherBox2">
+        <h2>其他假 2</h2>
+        <div class="otherform">
+          <label for="otherName2">名稱</label><input type="text" id="otherName2" maxlength="6" autocomplete="off" placeholder="自訂假">
+          <span class="lb">顏色</span><div class="oswatches" id="otherSw2"></div>
+          <span class="lb">預覽</span><div class="opreview" id="otherPrev2"></div>
         </div>
       </div>
       <div class="panel__section" id="syncBox">
@@ -129,16 +137,18 @@ const LEAVES=[
   {k:'X',n:'休假',t:'rest',off:true},
   {k:'補休',n:'補休24時',t:'comp',cls:'k-comp',off:true},
   {k:'其他',n:'其他假',t:'other',cls:'k-other',off:true},
+  {k:'其他2',n:'自訂假',t:'other2',cls:'k-other2',off:true},
   {k:'停休',n:'停休',t:'stop',cls:'k-stop'},
   {k:'國外',n:'國外專案',t:'train',cls:'k-train',away:true},
   {k:'上班',n:'上班',t:'work',cls:'k-work'}
 ];
 LEAVES.forEach(l=>{if(!CM[l.k])CM[l.k]={k:l.k,cls:l.cls,d:l.n};});
 const LM=Object.fromEntries(LEAVES.map(l=>[l.k,l]));
-const ABBR={rest:'休',comp:'補',other:'其',stop:'停',train:'專',work:'無'}; // 手機版假別縮寫
+const ABBR={rest:'休',comp:'補',other:'其',other2:'自',stop:'停',train:'專',work:'無'};
+const OTHER_INDEX={'其他':0,'其他2':1}; // 兩個可自訂的其他假 // 手機版假別縮寫
 const isOff=c=>!!(LM[c]&&LM[c].off);
 const YT=[
-  {k:'rest',n:'休假'},{k:'comp',n:'補休24時'},{k:'other',n:'其他假'},
+  {k:'rest',n:'休假'},{k:'comp',n:'補休24時'},{k:'other',n:'其他假'},{k:'other2',n:'自訂假'},
   {k:'stop',n:'停休'},{k:'train',n:'國外專案'},{k:'work',n:'上班'}
 ];
 const mod=(a,n)=>((a%n)+n)%n;
@@ -239,7 +249,7 @@ let frameMode='add';
 const month=()=>{const k=ym(cur.y,cur.m);return S.roster[k]||(S.roster[k]={});};
 const getC=(p,d)=>((S.roster[ym(cur.y,cur.m)]||{})[p]||{})[d]||'';
 function setC(p,d,c){const R=month();R[p]=R[p]||{};if(c)R[p][d]=c;else delete R[p][d];}
-function chip(c){if(!c)return'';const k=CM[c];return '<span class="chip '+(k?k.cls:'')+'">'+(c==='X'?'✕':c==='其他'?esc(otherCell()):esc(c))+'</span>';}
+function chip(c){if(!c)return'';const k=CM[c];return '<span class="chip '+(k?k.cls:'')+'">'+(c==='X'?'✕':c in OTHER_INDEX?esc(otherCell(OTHER_INDEX[c])):esc(c))+'</span>';}
 function seqLabel(pos){const c=S.seq[pos];const tot=S.seq.filter(x=>x===c).length;if(tot<2)return c==='X'?'✕':c;
   const n=S.seq.slice(0,pos).filter(x=>x===c).length;return (c==='X'?'✕':c)+'('+(n+1)+')';}
 
@@ -367,7 +377,7 @@ $('prevM').onclick=()=>{cur.m--;if(cur.m<1){cur.m=12;cur.y--;}lastCell=null;rend
 $('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;renderRoster();};
 
 function norm(v){v=String(v).trim().replace(/値/g,'值').replace(/\s+/g,'');
-  if(/^[xX✕×╳]$/.test(v))return'X';v=v.replace(/[○◯Oo]/g,'〇');if(v===otherName()||v===otherCell())return'其他';return RENAME[v]||v;}
+  if(/^[xX✕×╳]$/.test(v))return'X';v=v.replace(/[○◯Oo]/g,'〇');const oi=OTHER_TYPES.findIndex((_,i)=>v===otherName(i)||v===otherCell(i));if(oi>=0)return OTHER_TYPES[oi].code;return RENAME[v]||v;}
 document.addEventListener('paste',e=>{
   if(!editMode||$('view-roster').hidden||!lastCell)return;
   if(e.target.closest&&e.target.closest('input,textarea,select'))return;
@@ -431,10 +441,10 @@ function buildYearBody(Y){
   }
   return {html:h+'</tbody>',cnt};
 }
-const monthTotals=cnt=>Array(12).fill(0).map((_,i)=>cnt.rest[i]+cnt.comp[i]+cnt.other[i]);
+const monthTotals=cnt=>Array(12).fill(0).map((_,i)=>cnt.rest[i]+cnt.comp[i]+cnt.other[i]+cnt.other2[i]);
 function buildYearFoot(cnt){
   const frow=(lab,arr,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+esc(lab)+'</th>'+arr.map(v=>'<td>'+(v||'·')+'</td>').join('')+'<td class="yt">'+sumArr(arr)+'</td></tr>';
-  return '<tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow(otherName(),cnt.other)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',monthTotals(cnt),'total')+'</tfoot>';
+  return '<tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow(otherName(0),cnt.other)+frow(otherName(1),cnt.other2)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',monthTotals(cnt),'total')+'</tfoot>';
 }
 function renderYearStats(Y,cnt){
   const YD=daysInYear(Y),T=sumArr(monthTotals(cnt));
@@ -444,7 +454,7 @@ function renderYearStats(Y,cnt){
     '<div class="stat"><div class="lab"><label for="tgt">年總應休日數</label></div><input id="tgt" type="number" min="0" value="'+tgt+'"></div>'+
     '<div class="stat"><div class="lab"><label for="ann">人事總處公告</label></div><input id="ann" type="number" min="0" value="'+ann+'"></div>'+
     '<div class="stat"><div class="lab">已排月總休假</div><div class="val">'+T+'<small class="of">/'+YD+'<span class="pct">'+Math.round(T/YD*100)+'%</span></small></div><div class="meter" title="黑線為人事總處公告日數"><i data-js="meter-fill"></i><b data-js="meter-mark"></b></div></div>'+
-    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val'+(diff>=0?'':' val--over')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sumArr(cnt.rest)+' ＋ 補休 '+sumArr(cnt.comp)+' ＋ '+esc(otherCell())+' '+sumArr(cnt.other)+'</div></div>';
+    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val'+(diff>=0?'':' val--over')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sumArr(cnt.rest)+' ＋ 補休 '+sumArr(cnt.comp)+' ＋ '+esc(otherCell(0))+' '+sumArr(cnt.other)+' ＋ '+esc(otherCell(1))+' '+sumArr(cnt.other2)+'</div></div>';
   ys.querySelector('[data-js="meter-fill"]').style.width=pct+'%';
   ys.querySelector('[data-js="meter-mark"]').style.left=apct+'%';
 }
@@ -494,7 +504,7 @@ function applyLock(){
   document.documentElement.classList.toggle('is-locked',L);
   document.documentElement.classList.toggle('is-editing',!L);
   document.querySelectorAll('#rgrid .nm,#tgt,#ann').forEach(el=>{el.readOnly=L;});  // 勤務註記不受鎖定
-  document.querySelectorAll('#rgrid .offsel,#fillBtn,#clearBtn,#fillN,#seq button,#seqAdd button,#otherName,#otherSw button,#otherSw input').forEach(el=>{el.disabled=L;});
+  document.querySelectorAll('#rgrid .offsel,#fillBtn,#clearBtn,#fillN,#seq button,#seqAdd button,#otherName,#otherSw button,#otherSw input,#otherName2,#otherSw2 button,#otherSw2 input').forEach(el=>{el.disabled=L;});
   document.querySelectorAll('.lockbtn').forEach(b=>{b.setAttribute('aria-pressed',String(!L));
     b.innerHTML=(L?ICON_LOCK:ICON_OPEN)+'<span class="txt">'+(L?'開始編輯':'完成編輯')+'</span>';
     b.setAttribute('aria-label',L?'目前鎖定，按一下開始編輯':'編輯中，按一下鎖定');b.title=L?'開始編輯':'完成編輯並鎖定';});
@@ -505,27 +515,39 @@ document.addEventListener('click',e=>{const b=e.target.closest('.lockbtn');if(!b
   toast(editMode?'已開始編輯':'已鎖定，班表不會被誤觸修改');});
 {const r1=renderRoster,r2=renderYear,r3=renderSeq;
  renderRoster=function(){r1();applyLock();$('opsTitle').textContent='本月操作・'+cur.y+' 年 '+cur.m+' 月';};renderYear=function(){r2();applyLock();};renderSeq=function(){r3();applyLock();};}
-/* ---------- 其他假：可自訂名稱與顏色（存在班表資料裡，會跟著同步） ---------- */
+/* ---------- 其他假 1、2：可自訂名稱與顏色（存在班表資料裡，會跟著同步） ---------- */
 // 預設色定義在 CSS 變數 --other-preset-1～7
 const OTHER_COLORS=[1,2,3,4,5,6,7].map(i=>getComputedStyle(document.documentElement).getPropertyValue('--other-preset-'+i).trim()).filter(Boolean);
-function otherName(){return((S.other&&S.other.name)||'其他假').trim()||'其他假';}
-function otherCell(){const n=otherName();const t=n.length>2?n.replace(/假$/,''):n;return t.slice(0,2);}
-function otherColor(){const c=S.other&&S.other.color;return /^#[0-9a-f]{6}$/i.test(c||'')?c:OTHER_COLORS[0];}
+const OTHER_TYPES=[
+  {code:'其他',t:'other',key:'other',def:'其他假',color:0,ids:{name:'otherName',sw:'otherSw',prev:'otherPrev',color:'otherColor'}},
+  {code:'其他2',t:'other2',key:'other2',def:'自訂假',color:1,ids:{name:'otherName2',sw:'otherSw2',prev:'otherPrev2',color:'otherColor2'}},
+];
+const otherCfg=i=>S[OTHER_TYPES[i].key]||{};
+function otherName(i){const def=OTHER_TYPES[i].def;return (otherCfg(i).name||def).trim()||def;}
+function otherCell(i){const n=otherName(i);const t=n.length>2?n.replace(/假$/,''):n;return t.slice(0,2);}
+function otherColor(i){const c=otherCfg(i).color;return /^#[0-9a-f]{6}$/i.test(c||'')?c:OTHER_COLORS[OTHER_TYPES[i].color];}
 function inkFor(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return (0.299*r+0.587*g+0.114*b)>165?'var(--on-light-ink)':'var(--y-on-ink)';}
-function applyOtherCfg(){
-  const n=otherName(),c=otherColor();
-  LM['其他'].n=n;CM['其他'].d=n;const yt=YT.find(t=>t.k==='other');if(yt)yt.n=n;ABBR.other=otherCell().slice(0,1);
-  document.documentElement.style.setProperty('--y-other',c);document.documentElement.style.setProperty('--y-other-ink',inkFor(c));
-  const inp=$('otherName');if(document.activeElement!==inp)inp.value=(S.other&&S.other.name)||'';
-  $('otherSw').innerHTML=OTHER_COLORS.map(x=>'<button type="button" class="osw" data-c="'+x+'" aria-label="顏色 '+x+'" aria-pressed="'+(x.toLowerCase()===c.toLowerCase())+'"></button>').join('')+
-    '<label class="visually-hidden" for="otherColor">自訂顏色</label><input type="color" id="otherColor" value="'+c+'" title="自訂顏色">';
-  $('otherSw').querySelectorAll('.osw').forEach(b=>{b.style.background=b.dataset.c;});
-  $('otherPrev').innerHTML='格子 '+chip('其他')+'　縮寫 <span class="yd t-other opreview__abbr">'+esc(ABBR.other)+'</span>';
+function renderOtherSwatches(i,c){
+  const ids=OTHER_TYPES[i].ids,sw=$(ids.sw);
+  sw.innerHTML=OTHER_COLORS.map(x=>'<button type="button" class="osw" data-c="'+x+'" aria-label="顏色 '+x+'" aria-pressed="'+(x.toLowerCase()===c.toLowerCase())+'"></button>').join('')+
+    '<label class="visually-hidden" for="'+ids.color+'">自訂顏色</label><input type="color" id="'+ids.color+'" value="'+c+'" title="自訂顏色">';
+  sw.querySelectorAll('.osw').forEach(b=>{b.style.background=b.dataset.c;});
 }
-function setOther(patch){S.other=Object.assign({},S.other||{},patch);save();renderAll();}
-$('otherName').addEventListener('input',e=>{if(!editMode)return;setOther({name:e.target.value.trim()});});
-$('otherSw').addEventListener('click',e=>{const b=e.target.closest('.osw');if(!b||!editMode)return;setOther({color:b.dataset.c});});
-$('otherSw').addEventListener('change',e=>{if(e.target.id==='otherColor'&&editMode)setOther({color:e.target.value});});
+function applyOneOther(i){
+  const o=OTHER_TYPES[i],n=otherName(i),c=otherColor(i);
+  LM[o.code].n=n;CM[o.code].d=n;const yt=YT.find(t=>t.k===o.t);if(yt)yt.n=n;ABBR[o.t]=otherCell(i).slice(0,1);
+  document.documentElement.style.setProperty('--y-'+o.t,c);document.documentElement.style.setProperty('--y-'+o.t+'-ink',inkFor(c));
+  const inp=$(o.ids.name);if(document.activeElement!==inp)inp.value=otherCfg(i).name||'';
+  renderOtherSwatches(i,c);
+  $(o.ids.prev).innerHTML='格子 '+chip(o.code)+'　縮寫 <span class="yd t-'+o.t+' opreview__abbr">'+esc(ABBR[o.t])+'</span>';
+}
+function applyOtherCfg(){OTHER_TYPES.forEach((_,i)=>applyOneOther(i));}
+function setOther(i,patch){const k=OTHER_TYPES[i].key;S[k]=Object.assign({},S[k]||{},patch);save();renderAll();}
+OTHER_TYPES.forEach((o,i)=>{
+  $(o.ids.name).addEventListener('input',e=>{if(!editMode)return;setOther(i,{name:e.target.value.trim()});});
+  $(o.ids.sw).addEventListener('click',e=>{const b=e.target.closest('.osw');if(!b||!editMode)return;setOther(i,{color:b.dataset.c});});
+  $(o.ids.sw).addEventListener('change',e=>{if(e.target.id===o.ids.color&&editMode)setOther(i,{color:e.target.value});});
+});
 function renderAll(){applyOtherCfg();renderBrushes();renderSeq();renderRoster();renderYearSel();renderYBrushes();renderYear();route();}
 window.addEventListener('hashchange',route);
 renderAll();

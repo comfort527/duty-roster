@@ -55,6 +55,7 @@ main{padding-block:18px 64px;display:grid;gap:16px}
 .k-off{background:transparent;color:var(--alert);font-size:16px;font-weight:600}
 .k-comp{background:var(--y-comp);color:var(--y-on-ink)}
 .k-other{background:var(--y-other);color:var(--y-other-ink,var(--y-on-ink))}
+.k-other2{background:var(--y-other2);color:var(--y-other2-ink,var(--y-on-ink))}
 .k-stop{background:var(--y-stop);color:var(--y-on-ink)}
 .k-train{background:var(--y-train);color:var(--y-on-ink);box-shadow:inset 0 0 0 1.5px var(--alert)}
 .k-work{background:var(--y-work);color:var(--y-work-ink);box-shadow:inset 0 0 0 1px var(--line-strong)}
@@ -183,6 +184,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .yd.t-comp{background:var(--y-comp);color:var(--y-on-ink)}
 .yd.t-stop{background:var(--y-stop);color:var(--y-on-ink)}
 .yd.t-other{background:var(--y-other);color:var(--y-other-ink,var(--y-on-ink))}
+.yd.t-other2{background:var(--y-other2);color:var(--y-other2-ink,var(--y-on-ink))}
 .yd.t-train{background:var(--y-train);color:var(--y-on-ink);box-shadow:inset 0 0 0 1.5px var(--alert)}
 .yd.t-work{background:var(--y-work);color:var(--y-work-ink);box-shadow:inset 0 0 0 1px var(--line)}
 .we .yd.t-work,.we .yd:not([class*="t-"]){color:var(--wk-ink)}
