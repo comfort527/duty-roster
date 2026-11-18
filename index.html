@@ -267,7 +267,7 @@ const getOL=(p,d,k)=>(((S.otherLabels||{})[k||ym(cur.y,cur.m)]||{})[p]||{})[d]||
 function setOL(p,d,val){S.otherLabels=S.otherLabels||{};const k=ym(cur.y,cur.m);const M=S.otherLabels[k]||(S.otherLabels[k]={});M[p]=M[p]||{};if(val)M[p][d]=val;else delete M[p][d];}
 // 畫上其他假時記下「當下」的名稱與顏色
 function stampFor(c){const i=OTHER_INDEX[c];return i===undefined?null:{n:otherName(i),c:otherColor(i)};}
-function chip(c,label){if(!c)return'';const k=CM[c];const other=c in OTHER_INDEX?(label&&label.n?shortOther(label.n):otherCell(OTHER_INDEX[c])):null;
+function chip(c,label){if(!c)return'';const k=CM[c];const other=c in OTHER_INDEX?(label&&label.n?shortOther(String(label.n)):otherCell(OTHER_INDEX[c])):null;
   return '<span class="chip '+(k?k.cls:'')+'"'+(label&&label.n?' title="'+esc(label.n)+'"':'')+'>'+(c==='X'?'✕':other!==null?esc(other):esc(c))+'</span>';}
 function seqLabel(pos){const c=S.seq[pos];const tot=S.seq.filter(x=>x===c).length;if(tot<2)return c==='X'?'✕':c;
   const n=S.seq.slice(0,pos).filter(x=>x===c).length;return (c==='X'?'✕':c)+'('+(n+1)+')';}
