@@ -145,10 +145,14 @@ const LEAVES=[
 LEAVES.forEach(l=>{if(!CM[l.k])CM[l.k]={k:l.k,cls:l.cls,d:l.n};});
 const LM=Object.fromEntries(LEAVES.map(l=>[l.k,l]));
 const ABBR={rest:'休',comp:'補',other:'其',other2:'自',stop:'停',train:'專',work:'無'};
-const OTHER_INDEX={'其他':0,'其他2':1}; // 兩個可自訂的其他假 // 手機版假別縮寫
+const OTHER_INDEX={'其他':0,'其他2':1}; // 兩個可自訂的其他假
+// 其他假的基本設定（migrate 執行時就要用，所以放在這裡）
+const OTHER_BASE=[{code:'其他',key:'other',def:'其他假'},{code:'其他2',key:'other2',def:'自訂假'}];
+// 其他假的格子文字：名稱超過兩字且以「假」結尾時去掉「假」，取前兩字
+const shortOther=n=>(n.length>2?n.replace(/假$/,''):n).slice(0,2); // 手機版假別縮寫
 const isOff=c=>!!(LM[c]&&LM[c].off);
 const YT=[
-  {k:'rest',n:'休假'},{k:'comp',n:'補休24時'},{k:'other',n:'其他假'},{k:'other2',n:'自訂假'},
+  {k:'rest',n:'休假'},{k:'comp',n:'補休24時'},{k:'other',n:'其他假 1'},{k:'other2',n:'其他假 2'},
   {k:'stop',n:'停休'},{k:'train',n:'國外專案'},{k:'work',n:'上班'}
 ];
 const mod=(a,n)=>((a%n)+n)%n;
@@ -206,7 +210,17 @@ const RENAME={'先1':'1','先2':'2','3〇':'3','3○':'3','休假':'X','補休24
 function migrate(s){if(!s)return s;const r=c=>RENAME[c]||c;
   s.seq=(s.seq||[]).map(r);
   Object.values(s.roster||{}).forEach(M=>Object.values(M).forEach(P=>Object.keys(P).forEach(d=>{P[d]=r(P[d]);})));
-  const D={};Object.keys(s.desc||{}).forEach(k=>{const n=r(k);if(D[n]==null||k===n)D[n]=s.desc[k];});s.desc=D;return s;}
+  const D={};Object.keys(s.desc||{}).forEach(k=>{const n=r(k);if(D[n]==null||k===n)D[n]=s.desc[k];});s.desc=D;
+  stampLegacyOthers(s);return s;}
+// 其他假是臨時名稱：每一格記住畫下當時的名稱。舊資料沒有記錄的格子，補上目前設定的名稱（已有記錄的不覆蓋）
+function stampLegacyOthers(s){
+  s.otherLabels=s.otherLabels||{};
+  Object.entries(s.roster||{}).forEach(([k,M])=>Object.entries(M).forEach(([p,P])=>Object.entries(P).forEach(([d,c])=>{
+    const base=OTHER_BASE.find(o=>o.code===c);if(!base)return;
+    const L=s.otherLabels[k]||(s.otherLabels[k]={}),row=L[p]||(L[p]={});if(row[d])return;
+    const cfg=s[base.key]||{};row[d]={n:((cfg.name||'').trim()||base.def),c:cfg.color||null};
+  })));
+}
 // 國定假日與補假（依人事總處辦公日曆表規則整理，如有異動請以公告為準）
 const HOLIDAYS={
  '2026-01-01':'元旦','2026-02-16':'除夕','2026-02-17':'春節','2026-02-18':'春節','2026-02-19':'春節','2026-02-20':'小年夜補假',
@@ -234,11 +248,11 @@ let tt;
 function toast(msg,withUndo){
   const el=$('toast');el.innerHTML='<span>'+esc(msg)+'</span>'+(withUndo&&undo?'<button type="button" id="undoBtn">復原</button>':'');
   el.hidden=false;clearTimeout(tt);tt=setTimeout(()=>el.hidden=true,5000);
-  const u=$('undoBtn');if(u)u.onclick=()=>{S.notes=S.notes||{};Object.entries(undo).forEach(([k,v])=>{if(v.r==null)delete S.roster[k];else S.roster[k]=JSON.parse(v.r);const ns=JSON.parse(v.n);NOTE_COLS.forEach((c,i)=>{S[c.k]=S[c.k]||{};if(ns[i]==null)delete S[c.k][k];else S[c.k][k]=ns[i];});S.frames=S.frames||{};if(v.f==null)delete S.frames[k];else S.frames[k]=JSON.parse(v.f);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
+  const u=$('undoBtn');if(u)u.onclick=()=>{S.notes=S.notes||{};Object.entries(undo).forEach(([k,v])=>{if(v.r==null)delete S.roster[k];else S.roster[k]=JSON.parse(v.r);const ns=JSON.parse(v.n);NOTE_COLS.forEach((c,i)=>{S[c.k]=S[c.k]||{};if(ns[i]==null)delete S[c.k][k];else S[c.k][k]=ns[i];});S.frames=S.frames||{};if(v.f==null)delete S.frames[k];else S.frames[k]=JSON.parse(v.f);S.otherLabels=S.otherLabels||{};if(v.o==null)delete S.otherLabels[k];else S.otherLabels[k]=JSON.parse(v.o);});undo=null;save();renderRoster();renderYear();el.hidden=true;};
 }
 const fillCount=()=>Math.min(24,Math.max(1,parseInt(S.fillMonths,10)||4));
 function span(){const a=[];for(let i=0;i<fillCount();i++){let m=cur.m+i,y=cur.y;while(m>12){m-=12;y++;}a.push([y,m]);}return a;}
-function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]={r:S.roster[k]?JSON.stringify(S.roster[k]):null,n:JSON.stringify(NOTE_COLS.map(c=>(S[c.k]||{})[k]||null)),f:S.frames&&S.frames[k]?JSON.stringify(S.frames[k]):null};});}
+function snap(list){undo={};(list||[[cur.y,cur.m]]).forEach(([y,m])=>{const k=ym(y,m);undo[k]={r:S.roster[k]?JSON.stringify(S.roster[k]):null,n:JSON.stringify(NOTE_COLS.map(c=>(S[c.k]||{})[k]||null)),f:S.frames&&S.frames[k]?JSON.stringify(S.frames[k]):null,o:S.otherLabels&&S.otherLabels[k]?JSON.stringify(S.otherLabels[k]):null};});}
 /* 紅框／黑框標記：獨立於班別，鎖定時也能用 */
 const isFrame=b=>typeof b==='string'&&b.startsWith('F:');
 const getF=(p,d)=>(((S.frames||{})[ym(cur.y,cur.m)]||{})[p]||{})[d]||'';
@@ -248,8 +262,13 @@ let frameMode='add';
 /* ---------- roster ---------- */
 const month=()=>{const k=ym(cur.y,cur.m);return S.roster[k]||(S.roster[k]={});};
 const getC=(p,d)=>((S.roster[ym(cur.y,cur.m)]||{})[p]||{})[d]||'';
-function setC(p,d,c){const R=month();R[p]=R[p]||{};if(c)R[p][d]=c;else delete R[p][d];}
-function chip(c){if(!c)return'';const k=CM[c];return '<span class="chip '+(k?k.cls:'')+'">'+(c==='X'?'✕':c in OTHER_INDEX?esc(otherCell(OTHER_INDEX[c])):esc(c))+'</span>';}
+function setC(p,d,c){const R=month();R[p]=R[p]||{};if(c)R[p][d]=c;else delete R[p][d];setOL(p,d,stampFor(c));}
+const getOL=(p,d,k)=>(((S.otherLabels||{})[k||ym(cur.y,cur.m)]||{})[p]||{})[d]||null;
+function setOL(p,d,val){S.otherLabels=S.otherLabels||{};const k=ym(cur.y,cur.m);const M=S.otherLabels[k]||(S.otherLabels[k]={});M[p]=M[p]||{};if(val)M[p][d]=val;else delete M[p][d];}
+// 畫上其他假時記下「當下」的名稱與顏色
+function stampFor(c){const i=OTHER_INDEX[c];return i===undefined?null:{n:otherName(i),c:otherColor(i)};}
+function chip(c,label){if(!c)return'';const k=CM[c];const other=c in OTHER_INDEX?(label&&label.n?shortOther(label.n):otherCell(OTHER_INDEX[c])):null;
+  return '<span class="chip '+(k?k.cls:'')+'"'+(label&&label.n?' title="'+esc(label.n)+'"':'')+'>'+(c==='X'?'✕':other!==null?esc(other):esc(c))+'</span>';}
 function seqLabel(pos){const c=S.seq[pos];const tot=S.seq.filter(x=>x===c).length;if(tot<2)return c==='X'?'✕':c;
   const n=S.seq.slice(0,pos).filter(x=>x===c).length;return (c==='X'?'✕':c)+'('+(n+1)+')';}
 
@@ -298,7 +317,7 @@ function buildDateCell(d){
 }
 function buildShiftCell(p,d){
   const c=getC(p,d),F=getF(p,d),isSel=lastCell&&lastCell.p===p&&lastCell.d===d;
-  return '<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(isSel?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c)+'</td>';
+  return '<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(isSel?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c,getOL(p,d))+'</td>';
 }
 function buildNoteCell(c,i,d,notes){
   return '<td class="c-note n'+i+'"><label class="visually-hidden" for="'+c.id+'-'+d+'">'+cur.m+'/'+d+' '+c.n+'</label><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2">'+esc(notes[i][d]||'')+'</textarea></td>';
@@ -337,8 +356,9 @@ function paintCell(td){
   if(isFrame(brush)){const col=brush.slice(2),cf=getF(p,d);
     if(frameMode==='add'){if(cf===col)return;setF(p,d,col);}else{if(cf!==col)return;setF(p,d,'');}
     td.classList.remove('f-r','f-k');const nf=getF(p,d);if(nf)td.classList.add('f-'+nf);save();return;}
-  const c=brush==='erase'?'':brush;if(getC(p,d)===c)return;
-  setC(p,d,c);td.innerHTML=chip(c);td.classList.toggle('is-off',isOff(c));updStats();save();
+  const c=brush==='erase'?'':brush,st=stampFor(c),old=getOL(p,d);
+  if(getC(p,d)===c&&(!st||(old&&old.n===st.n&&old.c===st.c)))return;
+  setC(p,d,c);td.innerHTML=chip(c,getOL(p,d));td.classList.toggle('is-off',isOff(c));updStats();save();
 }
 function selCell(td){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));td.classList.add('sel');lastCell={p:+td.dataset.p,d:+td.dataset.d};}
 const rg=$('rgrid');
@@ -372,7 +392,7 @@ function spanLabel(){const a=span();const f=([y,m])=>m+'月';return f(a[0])+'～
 $('fillN').value=fillCount();
 $('fillN').addEventListener('change',e=>{S.fillMonths=fillCount.call(null,S.fillMonths=e.target.value);e.target.value=S.fillMonths;save();});
 $('fillBtn').onclick=()=>{const a=span();snap(a);let k=0;S.people.forEach((_,p)=>{if(S.offsets[p]!=null){a.forEach(([y,m])=>fillPerson(p,y,m));k++;}});save();renderRoster();renderYear();toast('已依輪序填入 '+spanLabel()+'，共 '+k+' 人（「手動」的人不變）',true);};
-$('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};NOTE_COLS.forEach(c=>{if(S[c.k])delete S[c.k][k];});if(S.frames)delete S.frames[k];save();renderRoster();renderYear();toast('已清空本月班表、註記與框線',true);};
+$('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};NOTE_COLS.forEach(c=>{if(S[c.k])delete S[c.k][k];});if(S.frames)delete S.frames[k];if(S.otherLabels)delete S.otherLabels[k];save();renderRoster();renderYear();toast('已清空本月班表、註記與框線',true);};
 $('prevM').onclick=()=>{cur.m--;if(cur.m<1){cur.m=12;cur.y--;}lastCell=null;renderRoster();};
 $('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;renderRoster();};
 
@@ -401,7 +421,7 @@ function fixOffsets(){S.offsets=S.offsets.map(o=>o==null||!S.seq.length?null:o%S
 function yType(y,m,d){
   const key=ds(y,m,d);if(S.yearMarks[key])return{t:S.yearMarks[key],auto:false};
   const c=((S.roster[ym(y,m)]||{})[S.me]||{})[d];
-  if(c)return{t:LM[c]?LM[c].t:'work',auto:true};return{t:'',auto:false};
+  if(c)return{t:LM[c]?LM[c].t:'work',auto:true,label:(c in OTHER_INDEX)?getOL(S.me,d,ym(y,m)):null};return{t:'',auto:false};
 }
 function renderYBrushes(){
   const g=$('ybrushes');g.querySelectorAll('button').forEach(b=>b.remove());
@@ -422,7 +442,7 @@ function buildYearHead(){
 function buildYearCell(Y,m,d,w,cnt){
   const t=yType(Y,m,d);if(t.t)cnt[t.t][m-1]++;
   const hy=holName(Y,m,d);
-  const tip=m+'/'+d+'（'+WD[w]+'）'+(hy?hy+'・':'')+(t.t?esc(YT.find(x=>x.k===t.t).n):'未標記')+(t.auto?'・自動帶入':'');
+  const tip=m+'/'+d+'（'+WD[w]+'）'+(hy?hy+'・':'')+(t.t?esc(t.label&&t.label.n?t.label.n:YT.find(x=>x.k===t.t).n):'未標記')+(t.auto?'・自動帶入':'');
   return '<td class="yc"><div class="yd'+(t.t?' t-'+t.t:'')+(t.auto?' auto':'')+(ds(Y,m,d)===TODAY?' today':'')+(hy?' hol':'')+'" data-m="'+m+'" data-d="'+d+'" title="'+tip+'">'+d+'</div></td>';
 }
 function buildYearBody(Y){
@@ -444,7 +464,7 @@ function buildYearBody(Y){
 const monthTotals=cnt=>Array(12).fill(0).map((_,i)=>cnt.rest[i]+cnt.comp[i]+cnt.other[i]+cnt.other2[i]);
 function buildYearFoot(cnt){
   const frow=(lab,arr,cls)=>'<tr'+(cls?' class="'+cls+'"':'')+'><th scope="row">'+esc(lab)+'</th>'+arr.map(v=>'<td>'+(v||'·')+'</td>').join('')+'<td class="yt">'+sumArr(arr)+'</td></tr>';
-  return '<tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow(otherName(0),cnt.other)+frow(otherName(1),cnt.other2)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',monthTotals(cnt),'total')+'</tfoot>';
+  return '<tfoot>'+frow('休假',cnt.rest)+frow('補休24時',cnt.comp)+frow('其他假 1',cnt.other)+frow('其他假 2',cnt.other2)+frow('停休',cnt.stop)+frow('國外專案',cnt.train)+frow('月總休假',monthTotals(cnt),'total')+'</tfoot>';
 }
 function renderYearStats(Y,cnt){
   const YD=daysInYear(Y),T=sumArr(monthTotals(cnt));
@@ -454,7 +474,7 @@ function renderYearStats(Y,cnt){
     '<div class="stat"><div class="lab"><label for="tgt">年總應休日數</label></div><input id="tgt" type="number" min="0" value="'+tgt+'"></div>'+
     '<div class="stat"><div class="lab"><label for="ann">人事總處公告</label></div><input id="ann" type="number" min="0" value="'+ann+'"></div>'+
     '<div class="stat"><div class="lab">已排月總休假</div><div class="val">'+T+'<small class="of">/'+YD+'<span class="pct">'+Math.round(T/YD*100)+'%</span></small></div><div class="meter" title="黑線為人事總處公告日數"><i data-js="meter-fill"></i><b data-js="meter-mark"></b></div></div>'+
-    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val'+(diff>=0?'':' val--over')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sumArr(cnt.rest)+' ＋ 補休 '+sumArr(cnt.comp)+' ＋ '+esc(otherCell(0))+' '+sumArr(cnt.other)+' ＋ '+esc(otherCell(1))+' '+sumArr(cnt.other2)+'</div></div>';
+    '<div class="stat"><div class="lab">'+(diff>=0?'距應休尚差':'超出應休')+'</div><div class="val'+(diff>=0?'':' val--over')+'">'+Math.abs(diff)+'</div><div class="lab">休假 '+sumArr(cnt.rest)+' ＋ 補休 '+sumArr(cnt.comp)+' ＋ 其他 '+(sumArr(cnt.other)+sumArr(cnt.other2))+'</div></div>';
   ys.querySelector('[data-js="meter-fill"]').style.width=pct+'%';
   ys.querySelector('[data-js="meter-mark"]').style.left=apct+'%';
 }
@@ -524,7 +544,7 @@ const OTHER_TYPES=[
 ];
 const otherCfg=i=>S[OTHER_TYPES[i].key]||{};
 function otherName(i){const def=OTHER_TYPES[i].def;return (otherCfg(i).name||def).trim()||def;}
-function otherCell(i){const n=otherName(i);const t=n.length>2?n.replace(/假$/,''):n;return t.slice(0,2);}
+function otherCell(i){return shortOther(otherName(i));}
 function otherColor(i){const c=otherCfg(i).color;return /^#[0-9a-f]{6}$/i.test(c||'')?c:OTHER_COLORS[OTHER_TYPES[i].color];}
 function inkFor(hex){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return (0.299*r+0.587*g+0.114*b)>165?'var(--on-light-ink)':'var(--y-on-ink)';}
 function renderOtherSwatches(i,c){
@@ -535,7 +555,7 @@ function renderOtherSwatches(i,c){
 }
 function applyOneOther(i){
   const o=OTHER_TYPES[i],n=otherName(i),c=otherColor(i);
-  LM[o.code].n=n;CM[o.code].d=n;const yt=YT.find(t=>t.k===o.t);if(yt)yt.n=n;ABBR[o.t]=otherCell(i).slice(0,1);
+  LM[o.code].n=n;CM[o.code].d=n;ABBR[o.t]=otherCell(i).slice(0,1);  // 年度表名稱固定為「其他假 1／2」
   document.documentElement.style.setProperty('--y-'+o.t,c);document.documentElement.style.setProperty('--y-'+o.t+'-ink',inkFor(c));
   const inp=$(o.ids.name);if(document.activeElement!==inp)inp.value=otherCfg(i).name||'';
   renderOtherSwatches(i,c);
