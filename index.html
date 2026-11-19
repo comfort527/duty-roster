@@ -18,9 +18,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@700&family=IBM+Plex+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <!-- 修改任何 CSS 檔後請更新 ?v= 版本號，讓瀏覽器重新抓新樣式 -->
-<link rel="stylesheet" href="css/tokens.css?v=20261119">
-<link rel="stylesheet" href="css/base.css?v=20261119">
-<link rel="stylesheet" href="css/components.css?v=20261119">
+<link rel="stylesheet" href="css/tokens.css?v=20261120">
+<link rel="stylesheet" href="css/base.css?v=20261120">
+<link rel="stylesheet" href="css/components.css?v=20261120">
 </head>
 <body>
 
@@ -245,10 +245,14 @@ let cur={y:now.getFullYear(),m:now.getMonth()+1};
 if(!S.roster[ym(cur.y,cur.m)]){cur={y:2026,m:12};}
 const NOTE_COLS=[{k:'notes',n:'勤務註記',s:'勤務',id:'note'},{k:'notes2',n:'雜務註記1',s:'雜務1',id:'note2'},{k:'notes3',n:'雜務註記2',s:'雜務2',id:'note3'}];
 let noteView=Math.min(2,Math.max(0,+readStorage('duty-roster-nv')||0));
-// 聚焦的人員欄（每台裝置各自記住；沒有聚焦時為 null）
-const FOCUS_KEY='duty-roster-focus';
-let focusP=(()=>{const v=readStorage(FOCUS_KEY);return v===null||v===''?null:+v;})();
-const isFocusOn=()=>focusP!==null&&focusP<S.people.length;
+// 聚焦的人員欄（每台裝置各自記住）：沒選過時預設聚焦本週班表的人；'' 表示取消聚焦
+const FOCUS_KEY='duty-roster-focus-v2';
+let focusChoice=readStorage(FOCUS_KEY);
+function focusIndex(){
+  if(focusChoice===null){const i=S.people.indexOf(WEEK_PERSON);return i<0?null:i;}
+  return focusChoice===''?null:+focusChoice;
+}
+const isFocusOn=()=>{const f=focusIndex();return f!==null&&f<S.people.length;};
 let brush='X',ybrush='rest',painting=false,ypainting=false,lastCell=null,undo=null;
 
 /* ---------- toast ---------- */
@@ -306,7 +310,7 @@ function buildOffsetOptions(p,idx1,len){
   return o;
 }
 function buildPersonHeader(nm,p,idx1,len){
-  return '<th scope="col"'+(isFocusOn()&&p===focusP?' class="is-focus"':'')+'><label class="visually-hidden" for="nm-'+p+'">第'+(p+1)+'位姓名</label><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'">'+
+  return '<th scope="col"'+(isFocusOn()&&p===focusIndex()?' class="is-focus"':'')+'><label class="visually-hidden" for="nm-'+p+'">第'+(p+1)+'位姓名</label><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'">'+
     '<label class="visually-hidden" for="off-'+p+'">'+esc(nm)+' 本月1日的輪序</label><select class="offsel" id="off-'+p+'" data-p="'+p+'">'+buildOffsetOptions(p,idx1,len)+'</select></th>';
 }
 function buildNoteHeader(c,i){
@@ -325,7 +329,7 @@ function buildDateCell(d){
 }
 function buildShiftCell(p,d){
   const c=getC(p,d),F=getF(p,d),isSel=lastCell&&lastCell.p===p&&lastCell.d===d;
-  const focus=isFocusOn()?(p===focusP?' is-focus':' is-dim'):'';
+  const focus=isFocusOn()?(p===focusIndex()?' is-focus':' is-dim'):'';
   return '<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(isSel?' sel':'')+focus+'" data-p="'+p+'" data-d="'+d+'">'+chip(c,getOL(p,d))+'</td>';
 }
 function buildNoteCell(c,i,d,notes){
@@ -403,8 +407,8 @@ rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-
 });
 /* 鎖定時點表頭姓名（或按 Enter）聚焦這個人；再點一次取消 */
 function toggleFocus(p){
-  focusP=focusP===p?null:p;
-  writeStorage(FOCUS_KEY,focusP===null?'':String(focusP));
+  focusChoice=focusIndex()===p?'':String(p);
+  writeStorage(FOCUS_KEY,focusChoice);
   renderRoster();
 }
 rg.addEventListener('click',e=>{
