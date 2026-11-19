@@ -40,6 +40,7 @@
         <button class="btn todaybtn" id="todayBtn" type="button">今天</button>
         <button class="synclight" type="button" data-sync data-state="idle" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
+        <section class="week-strip" data-js="week-strip" aria-label="本週班表" hidden></section>
         <div class="brushbar">
           <div class="group brushbar__group--shift" id="brushes" role="toolbar" aria-label="班別畫筆"><span class="glabel">班別</span></div>
           <div class="group brushbar__group--leave" id="lbrushes" role="toolbar" aria-label="假別畫筆"><span class="glabel">假別</span></div>
@@ -355,7 +356,26 @@ function updStats(){
     S.people.forEach((_,p)=>{const c=getC(p,d);if(c==='值')fd[p]++;if(isOff(c))fo[p]++;});
   }
   S.people.forEach((_,p)=>{$('fo-'+p).textContent=fo[p];});
-  const me=S.people[S.me]||'';
+  renderWeekStrip();
+}
+/* ---------- 本週班表：固定顯示指定人員（炎鴻）這週一到週日的班 ---------- */
+const WEEK_PERSON='炎鴻';
+function weekDays(){
+  const [y,m,d]=TODAY.split('-').map(Number),base=new Date(y,m-1,d),w=wdOf(y,m,d);
+  return [0,1,2,3,4,5,6].map(i=>{const t=new Date(base);t.setDate(d-w+i);return {y:t.getFullYear(),m:t.getMonth()+1,d:t.getDate(),w:i};});
+}
+function buildWeekDay(p,day){
+  const key=ym(day.y,day.m),c=((S.roster[key]||{})[p]||{})[day.d]||'',isToday=ds(day.y,day.m,day.d)===TODAY;
+  const label=(c in OTHER_INDEX)?getOL(p,day.d,key):null;
+  return '<div class="week-strip__day'+(isToday?' is-today':'')+(isOff(c)?' is-off':'')+'"><span class="week-strip__date">'+(isToday?'今天':WD[day.w]+' '+day.d)+'</span>'+(chip(c,label)||'<span class="week-strip__none">－</span>')+'</div>';
+}
+function renderWeekStrip(){
+  const el=document.querySelector('[data-js="week-strip"]'),p=S.people.indexOf(WEEK_PERSON);
+  el.hidden=p<0;
+  if(p<0)return;
+  const days=weekDays(),first=days[0],last=days[6];
+  el.innerHTML='<div class="week-strip__head"><b>'+esc(WEEK_PERSON)+'・本週</b><span>'+first.m+'/'+first.d+'～'+last.m+'/'+last.d+'</span></div>'+
+    '<div class="week-strip__days">'+days.map(day=>buildWeekDay(p,day)).join('')+'</div>';
 }
 function paintCell(td){
   const p=+td.dataset.p,d=+td.dataset.d;

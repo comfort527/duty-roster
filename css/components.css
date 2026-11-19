@@ -143,6 +143,20 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .yd.opreview__abbr{display:inline-flex;width:24px;height:20px;border-radius:4px;align-items:center;justify-content:center;font-weight:700}
 .opsbar{margin-left:auto}
 .is-locked .opsbar{display:none}
+/* 本週班表（固定指定人員）：月班表工具列內的單列精簡版 */
+.week-strip{flex-basis:100%;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:4px 8px}
+.week-strip[hidden]{display:none}
+.week-strip__head{display:grid;line-height:1.25;flex:none}
+.week-strip__head b{font-size:12px}
+.week-strip__head span{font-size:10px;color:var(--muted);font-family:var(--font-data)}
+.week-strip__days{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;min-width:0}
+@media (min-width:641px){.week-strip{max-width:780px}.week-strip__days{flex:1}}
+.week-strip__day{display:grid;justify-items:center;gap:1px;padding:2px 0;border-radius:6px}
+.week-strip__day.is-off{background:var(--off-cell)}
+.week-strip__day.is-today{background:var(--alert-soft);box-shadow:inset 0 0 0 1.5px var(--alert)}
+.week-strip__date{font-size:10px;color:var(--muted);white-space:nowrap}
+.week-strip__day.is-today .week-strip__date{color:var(--alert);font-weight:700}
+.week-strip__none{font-size:11px;color:var(--muted);line-height:22px}
 /* 編輯中橫幅：解鎖後出現在工具列最上方，提醒還在編輯狀態 */
 .edit-banner{display:none}
 .is-editing .edit-banner{display:flex;flex-basis:100%;order:-1;align-items:center;gap:8px;background:var(--accent);color:var(--accent-ink);border-radius:8px;padding:5px 10px;font-size:12px}
@@ -237,6 +251,10 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .todaybtn{height:30px;padding:0 8px;font-size:12px}
   .synclight{height:30px;padding:0 7px;font-size:11px;gap:4px}
   .tools--roster .tabs,.tools--year .tabs{display:none}
+  .week-strip{gap:6px;padding:3px 5px}
+  .week-strip__head b{font-size:11px}
+  .week-strip__date{font-size:9px}
+  .week-strip .chip{min-width:24px;height:18px;font-size:11px;padding:0 2px}
   .bnav{display:grid;grid-template-columns:repeat(3,1fr);position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);
     padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
   .bnav a{display:grid;justify-items:center;gap:1px;font-size:11px;color:var(--muted);text-decoration:none;padding:2px 0}
