@@ -243,6 +243,10 @@ let cur={y:now.getFullYear(),m:now.getMonth()+1};
 if(!S.roster[ym(cur.y,cur.m)]){cur={y:2026,m:12};}
 const NOTE_COLS=[{k:'notes',n:'勤務註記',s:'勤務',id:'note'},{k:'notes2',n:'雜務註記1',s:'雜務1',id:'note2'},{k:'notes3',n:'雜務註記2',s:'雜務2',id:'note3'}];
 let noteView=Math.min(2,Math.max(0,+readStorage('duty-roster-nv')||0));
+// 聚焦的人員欄（每台裝置各自記住；沒有聚焦時為 null）
+const FOCUS_KEY='duty-roster-focus';
+let focusP=(()=>{const v=readStorage(FOCUS_KEY);return v===null||v===''?null:+v;})();
+const isFocusOn=()=>focusP!==null&&focusP<S.people.length;
 let brush='X',ybrush='rest',painting=false,ypainting=false,lastCell=null,undo=null;
 
 /* ---------- toast ---------- */
@@ -300,7 +304,7 @@ function buildOffsetOptions(p,idx1,len){
   return o;
 }
 function buildPersonHeader(nm,p,idx1,len){
-  return '<th scope="col"><label class="visually-hidden" for="nm-'+p+'">第'+(p+1)+'位姓名</label><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'">'+
+  return '<th scope="col"'+(isFocusOn()&&p===focusP?' class="is-focus"':'')+'><label class="visually-hidden" for="nm-'+p+'">第'+(p+1)+'位姓名</label><input class="nm'+(p===S.me?' me':'')+'" id="nm-'+p+'" data-p="'+p+'" value="'+esc(nm)+'">'+
     '<label class="visually-hidden" for="off-'+p+'">'+esc(nm)+' 本月1日的輪序</label><select class="offsel" id="off-'+p+'" data-p="'+p+'">'+buildOffsetOptions(p,idx1,len)+'</select></th>';
 }
 function buildNoteHeader(c,i){
@@ -319,7 +323,8 @@ function buildDateCell(d){
 }
 function buildShiftCell(p,d){
   const c=getC(p,d),F=getF(p,d),isSel=lastCell&&lastCell.p===p&&lastCell.d===d;
-  return '<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(isSel?' sel':'')+'" data-p="'+p+'" data-d="'+d+'">'+chip(c,getOL(p,d))+'</td>';
+  const focus=isFocusOn()?(p===focusP?' is-focus':' is-dim'):'';
+  return '<td class="cell'+(isOff(c)?' is-off':'')+(F?' f-'+F:'')+(isSel?' sel':'')+focus+'" data-p="'+p+'" data-d="'+d+'">'+chip(c,getOL(p,d))+'</td>';
 }
 function buildNoteCell(c,i,d,notes){
   return '<td class="c-note n'+i+'"><label class="visually-hidden" for="'+c.id+'-'+d+'">'+cur.m+'/'+d+' '+c.n+'</label><textarea class="note-in" id="'+c.id+'-'+d+'" data-d="'+d+'" data-n="'+i+'" rows="2">'+esc(notes[i][d]||'')+'</textarea></td>';
@@ -374,6 +379,21 @@ rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-
   if(/[\r\n]/.test(t.value))t.value=t.value.replace(/[\r\n]+/g,' ');
   const nk=NOTE_COLS[+t.dataset.n||0].k;S[nk]=S[nk]||{};const k=ym(cur.y,cur.m);const M=S[nk][k]||(S[nk][k]={});
   if(t.value)M[t.dataset.d]=t.value;else delete M[t.dataset.d];save();
+});
+/* 鎖定時點表頭姓名（或按 Enter）聚焦這個人；再點一次取消 */
+function toggleFocus(p){
+  focusP=focusP===p?null:p;
+  writeStorage(FOCUS_KEY,focusP===null?'':String(focusP));
+  renderRoster();
+}
+rg.addEventListener('click',e=>{
+  const nm=e.target.closest('.nm');
+  if(!nm||editMode)return;
+  nm.blur();toggleFocus(+nm.dataset.p);
+});
+rg.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||editMode||!e.target.classList.contains('nm'))return;
+  e.preventDefault();const p=+e.target.dataset.p;toggleFocus(p);$('nm-'+p)?.focus();
 });
 rg.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('note-in')){e.preventDefault();e.target.blur();}});
 rg.addEventListener('change',e=>{
@@ -641,7 +661,7 @@ function renderSync(){
   if(on)$('syncNow').onclick=()=>pull(true);
   if(!on)setSync(SYNC_STATUS.READONLY,'唯讀：顯示 GitHub 上的班表。設定 Token 後才能把修改上傳。');
 }
-function editing(){const a=document.activeElement;return a&&a.closest&&a.closest('#rgrid')&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);}
+function editing(){const a=document.activeElement;return a&&a.closest&&a.closest('#rgrid')&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&!a.readOnly;}
 function applyRemote(json){
   if(editing()){pendingRemote=json;return;}
   pendingRemote=null;

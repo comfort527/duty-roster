@@ -94,6 +94,11 @@ table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-num
 .roster tr.week-end th,.roster tr.week-end td{border-bottom:2px solid var(--line-strong)}
 .roster tr.today th.c-date{box-shadow:inset 0 0 0 2px var(--alert)}
 td.cell{width:60px;min-width:56px;height:28px;cursor:pointer;user-select:none;-webkit-user-select:none}
+/* 聚焦某人：該欄淡黃底（休假格仍為綠色），其他人的班變淡 */
+.roster tr td.cell.is-focus{background:var(--focus-col)}
+.roster thead th.is-focus{background:var(--focus-col)}
+.roster td.cell.is-dim .chip{opacity:.38}
+.is-locked .roster .nm{cursor:pointer}
 .roster tr td.cell.is-off{background:var(--off-cell)}
 td.cell:hover{box-shadow:inset 0 0 0 1px var(--line-strong)}
 td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
