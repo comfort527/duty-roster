@@ -163,7 +163,7 @@ const dim=(y,m)=>new Date(y,m,0).getDate();
 const wdOf=(y,m,d)=>(new Date(y,m-1,d).getDay()+6)%7;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
-const now=new Date(); const TODAY=ds(now.getFullYear(),now.getMonth()+1,now.getDate());
+const now=new Date(); let TODAY=ds(now.getFullYear(),now.getMonth()+1,now.getDate());  // 跨日時由 refreshToday 更新
 
 function sample(){
   const s={year:2026,people:['隊員甲','隊員乙','隊員丙','隊員丁','隊員戊','隊員己','隊員庚'],
@@ -584,6 +584,21 @@ function scrollToToday(smooth){
 $('todayBtn').onclick=()=>{const t=new Date();if(location.hash==='#tools')location.hash='#roster';
   cur={y:t.getFullYear(),m:t.getMonth()+1};lastCell=null;renderRoster();requestAnimationFrame(()=>scrollToToday(true));};
 if(cur.y===now.getFullYear()&&cur.m===now.getMonth()+1)setTimeout(()=>scrollToToday(false),60);
+/* 跨日自動更新「今天」：網頁一直開著過了午夜，今天的標示也會移到新的一天 */
+function todayString(){const t=new Date();return ds(t.getFullYear(),t.getMonth()+1,t.getDate());}
+function refreshToday(){
+  const next=todayString();
+  if(next===TODAY)return;
+  if(editing())return;                       // 正在輸入時先不重畫，下一次檢查再更新
+  const [oy,om]=TODAY.split('-').map(Number),[ny,nm]=next.split('-').map(Number);
+  const wasOnToday=cur.y===oy&&cur.m===om;
+  TODAY=next;
+  if(wasOnToday)cur={y:ny,m:nm};             // 原本在看今天的月份，跨月時跟著換到新月份
+  renderRoster();renderYear();
+  if(wasOnToday&&!editMode)requestAnimationFrame(()=>scrollToToday(false));
+}
+setInterval(refreshToday,60000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshToday();});
 document.addEventListener('click',e=>{if(!e.target.closest('[data-sync]'))return;
   if(isPhoneW()){if(location.hash!=='#tools')location.hash='#tools';setTimeout(()=>$('syncBox').scrollIntoView({behavior:'smooth',block:'center'}),50);}
   else openPanel('syncBox');});
