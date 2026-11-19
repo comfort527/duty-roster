@@ -90,6 +90,8 @@ table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-num
 .roster tr.we th.c-date{background:var(--wk-bg)}
 .roster tr.we .dn,.roster tr.we .dw{color:var(--wk-ink)}
 .roster tr.we td{background:var(--wk-row)}
+/* 每週日下方加粗線，把一個月分成一週一週 */
+.roster tr.week-end th,.roster tr.week-end td{border-bottom:2px solid var(--line-strong)}
 .roster tr.today th.c-date{box-shadow:inset 0 0 0 2px var(--alert)}
 td.cell{width:60px;min-width:56px;height:28px;cursor:pointer;user-select:none;-webkit-user-select:none}
 .roster tr td.cell.is-off{background:var(--off-cell)}

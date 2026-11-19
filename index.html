@@ -324,7 +324,7 @@ function buildNoteCell(c,i,d,notes){
 }
 function buildDayRow(d,notes){
   const w=wdOf(cur.y,cur.m,d),isToday=ds(cur.y,cur.m,d)===TODAY,hn=holName(cur.y,cur.m,d);
-  return '<tr data-d="'+d+'" class="'+(w>=5?'we ':'')+(isToday?'today ':'')+(hn?'hol':'')+'">'+buildDateCell(d)+
+  return '<tr data-d="'+d+'" class="'+(w>=5?'we ':'')+(w===6?'week-end ':'')+(isToday?'today ':'')+(hn?'hol':'')+'">'+buildDateCell(d)+
     S.people.map((_,p)=>buildShiftCell(p,d)).join('')+
     NOTE_COLS.map((c,i)=>buildNoteCell(c,i,d,notes)).join('')+'</tr>';
 }
