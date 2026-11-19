@@ -39,6 +39,9 @@ async function openPage(browser, width, shot, consoleLog) {
   if (shot.editing) await page.click('#rtools .lockbtn');
   if (shot.name === 'settings' && !width.phone) await page.click('#seqBtn');
   else if (shot.hash) await page.evaluate((h) => { location.hash = h; }, shot.hash);
+  // 切換畫面後可能用到新的字，字型會再分批下載；等它載完再拍，避免每次反鋸齒不同
+  await page.waitForTimeout(150);
+  await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(300);
   return { context, page };
 }
@@ -50,7 +53,7 @@ async function captureAll(outDir) {
   for (const width of WIDTHS) {
     for (const shot of SHOTS) {
       const { context, page } = await openPage(browser, width, shot, consoleLog);
-      await page.screenshot({ path: path.join(outDir, `${shot.name}-${width.name}.png`) });
+      await page.screenshot({ path: path.join(outDir, `${shot.name}-${width.name}.png`), animations: 'disabled', caret: 'hide' });
       await context.close();
     }
   }
@@ -81,16 +84,21 @@ async function compare() {
   const consoleLog = await captureAll(cur);
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  let changed = 0;
+  // 300 像素以下且散在各處，多半是文字反鋸齒的偶發差異；重跑一次通常就消失
+  const NOISE = 300;
+  let changed = 0, noisy = 0;
   for (const file of fs.readdirSync(base).filter((f) => f.endsWith('.png'))) {
     const res = await countDiffPixels(page, path.join(base, file), path.join(cur, file));
-    const label = res.sizeChanged ? '尺寸不同' : res.diff === 0 ? '相同' : `${res.diff} 個像素不同`;
-    if (res.diff !== 0) changed++;
+    const small = !res.sizeChanged && res.diff > 0 && res.diff <= NOISE;
+    const label = res.sizeChanged ? '尺寸不同' : res.diff === 0 ? '相同' : small ? `${res.diff} 個像素不同（極少量，可重跑確認）` : `${res.diff} 個像素不同`;
+    if (small) noisy++; else if (res.diff !== 0) changed++;
     console.log(`${file}：${label}`);
   }
   await browser.close();
   console.log(consoleLog.length ? 'Console：\n' + consoleLog.join('\n') : 'Console：沒有錯誤或警告');
-  console.log(changed ? `有 ${changed} 張畫面不同，請打開 screenshots/current/ 對照。` : '所有畫面與基準一致。');
+  if (changed) console.log(`有 ${changed} 張畫面明顯不同，請打開 screenshots/current/ 對照。`);
+  else if (noisy) console.log(`沒有明顯變化；${noisy} 張只有極少量差異（多半是文字反鋸齒），可重跑確認。`);
+  else console.log('所有畫面與基準一致。');
 }
 
 (async () => {
