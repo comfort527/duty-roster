@@ -17,8 +17,6 @@
   --on-light-ink:#15201a;
   --glass-bg:rgb(251 252 251 / .72); --glass-line:rgb(0 0 0 / .14); --glass-blur:saturate(180%) blur(20px);
   --shadow-float:0 10px 30px rgb(0 0 0 / .16),0 1px 4px rgb(0 0 0 / .08);
-  /* 手機懸浮導覽列：高度、離螢幕底部的距離（有 Home 指示條時往上讓一點） */
-  --bnav-h:60px; --bnav-gap:max(12px,calc(env(safe-area-inset-bottom,0px) - 8px));
   --other-preset-1:#2f9fd0; --other-preset-2:#e07a3b; --other-preset-3:#8e5cc4; --other-preset-4:#c94f7c; --other-preset-5:#3aa38f; --other-preset-6:#b08a2e; --other-preset-7:#6b7a8f; --note1:#eaf2fb; --note2:#fdf4e1;
   --font-display:"Chiron Sung HK","Noto Serif TC","Songti TC",serif;
   --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;

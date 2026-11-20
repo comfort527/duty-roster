@@ -19,7 +19,8 @@
   .synclight[data-state="success"] .sdot::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--accent);animation:sripple 2s ease-out infinite}
   @keyframes sripple{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.85);opacity:0}}
 }
-.bnav{display:none}
+.viewmenu-btn{display:none}
+.viewmenu{display:none}
 .roster tr.today td{background:color-mix(in srgb,var(--alert) 10%,var(--surface))}
 .roster tr.hol .dn,.roster tr.hol .dw{color:var(--alert)}
 .roster .hn{display:block;font-size:9px;line-height:1.1;color:var(--alert);max-width:5.5em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
@@ -249,41 +250,47 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .tabs a{padding:5px 8px;font-size:13px}
   .tabs{padding:2px}
   .lockbtn{width:34px;height:32px;padding:0;justify-content:center;margin-left:auto}
-  .todaybtn{height:30px;padding:0 8px;font-size:12px}
-  .synclight{height:30px;padding:0 7px;font-size:11px;gap:4px}
+  .todaybtn{height:30px;padding:0 6px;font-size:12px}
+  .synclight{height:30px;padding:0 5px;font-size:11px;gap:4px}
   .tools--roster .tabs,.tools--year .tabs{display:none}
   .week-strip{gap:6px;padding:3px 5px}
   .week-strip__head b{font-size:11px}
   .week-strip__date{font-size:9px}
   .week-strip .chip{min-width:24px;height:18px;font-size:11px;padding:0 2px}
-  /* 懸浮導覽列：離開螢幕邊緣的膠囊，四周透出內容 */
-  .bnav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;position:fixed;z-index:8;left:0;right:0;bottom:var(--bnav-gap);
-    width:min(calc(100% - 32px),420px);height:var(--bnav-h);box-sizing:border-box;margin-inline:auto;padding:5px;
-    background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:var(--shadow-float)}
+  /* 頁面選單：右上角按鈕點開的毛玻璃選單（取代底部導覽列，讓表格多出可視空間） */
+  .viewmenu-btn{display:inline-flex;align-items:center;justify-content:center;padding:0;color:var(--ink);margin-left:auto}
+  .viewmenu-btn+.lockbtn{margin-left:0}
+  .viewmenu-btn[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+  .viewmenu:not([hidden]){display:grid;position:fixed;z-index:25;top:var(--viewmenu-top,60px);right:max(16px,env(safe-area-inset-right,0px));min-width:168px;padding:5px;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-float)}
   /* 毛玻璃：支援模糊的瀏覽器才改成半透明；系統開啟「降低透明度」時維持實心 */
   @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
-    .bnav{background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:.5px solid var(--glass-line)}
+    .viewmenu:not([hidden]){background:var(--glass-bg);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border:.5px solid var(--glass-line)}
   }
-  @media (prefers-reduced-transparency:reduce){.bnav{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}}
-  .bnav a{display:grid;justify-items:center;align-content:center;gap:1px;font-size:11px;line-height:1.3;color:var(--muted);text-decoration:none;border-radius:999px;
-    -webkit-tap-highlight-color:transparent;transition:opacity .15s,background-color .2s}
-  .bnav a:active{opacity:.55}
-  .bnav a[aria-current="page"]{color:var(--accent);font-weight:700;background:var(--accent-soft)}
-  .bnav svg{width:22px;height:22px}
-  .toast{bottom:calc(var(--bnav-gap) + var(--bnav-h) + 12px)}
+  @media (prefers-reduced-transparency:reduce){.viewmenu:not([hidden]){background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}}
+  @media (prefers-reduced-motion:no-preference){.viewmenu:not([hidden]){animation:menu-in .14s ease-out}@keyframes menu-in{from{opacity:0;transform:translateY(-4px) scale(.97)}}}
+  .viewmenu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:15px;color:var(--ink);text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .viewmenu a:active{background:var(--accent-soft)}
+  .viewmenu a[aria-current="page"]{color:var(--accent);font-weight:700;background:var(--accent-soft)}
+  .viewmenu svg{width:20px;height:20px;flex:none}
+  /* 設定頁：標題列固定在上方，放頁面選單按鈕；手機不用關閉鈕 */
+  html.view-tools .panel-head{display:flex;gap:8px;position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--surface)}
+  html.view-tools .panel-head .ptitle{margin-right:auto}
+  .panel-head .panel-close{display:none}
   html.view-tools .view-roster{display:none}
   html:not(.view-tools) aside.panel{display:none}
   .panel-head,.opsbar{display:none}
   .roster .hn{display:none}
 
   .lockbtn .txt{display:none}
-  main{padding-block:12px calc(var(--bnav-gap) + var(--bnav-h) + 20px);gap:12px}
+  main{padding-block:12px calc(20px + env(safe-area-inset-bottom,0px));gap:12px}
   .roster-main{gap:10px}
-  .tools{gap:6px}
+  .tools{gap:6px 4px}
   .tools>.brushbar{flex:1 1 100%}
-  .monthnav output{font-size:14px;min-width:6.4em}
+  .monthnav output{font-size:14px;min-width:6em}
   .monthnav{gap:2px}
   .ibtn{width:30px;height:30px}
+  .monthnav .ibtn{width:28px}
   /* brushes: one swipeable row */
   .brushbar{flex-direction:column;align-items:stretch;flex-wrap:nowrap;width:100%;gap:6px}
   .brushbar::-webkit-scrollbar{display:none}
@@ -301,7 +308,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .roster thead th{padding:6px 1px 4px;top:calc(env(safe-area-inset-top,0px) + var(--rtoolsH,0px))}
   .tools--roster,.tools--year{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);margin-inline:-16px;padding:8px 16px 6px;box-shadow:0 1px 0 var(--line)}
   .roster .c-date{width:36px;padding:0 2px}
-  .roster tfoot th,.roster tfoot td{bottom:calc(var(--bnav-gap) + var(--bnav-h) + 8px)}
+  .roster tfoot th,.roster tfoot td{bottom:env(safe-area-inset-bottom,0px)}
   .roster thead th:not(.c-date):not(.c-note){width:40.5px}
   .c-note{min-width:0;cursor:pointer}
   .roster thead .c-note{font-size:11px;white-space:normal;line-height:1.2;padding:6px 1px 4px}

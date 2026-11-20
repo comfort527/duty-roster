@@ -18,9 +18,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@700&family=IBM+Plex+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <!-- 修改任何 CSS 檔後請更新 ?v= 版本號，讓瀏覽器重新抓新樣式 -->
-<link rel="stylesheet" href="css/tokens.css?v=20261122">
-<link rel="stylesheet" href="css/base.css?v=20261122">
-<link rel="stylesheet" href="css/components.css?v=20261122">
+<link rel="stylesheet" href="css/tokens.css?v=20261123">
+<link rel="stylesheet" href="css/base.css?v=20261123">
+<link rel="stylesheet" href="css/components.css?v=20261123">
 </head>
 <body>
 
@@ -40,6 +40,7 @@
         <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
         <button class="btn todaybtn" id="todayBtn" type="button">今天</button>
         <button class="synclight" type="button" data-sync data-state="idle" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
+        <button class="ibtn viewmenu-btn" type="button" data-js="view-menu-btn" aria-label="切換頁面" aria-haspopup="true" aria-expanded="false" aria-controls="viewMenu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
         <section class="week-strip" data-js="week-strip" aria-label="本週班表" hidden></section>
         <div class="brushbar">
@@ -55,7 +56,7 @@
 
   <div class="panel-scrim" id="panelScrim"></div>
   <aside class="panel" id="panel" aria-label="設定">
-      <div class="panel-head"><h2 class="ptitle">設定</h2><button class="ibtn" id="panelClose" type="button" aria-label="關閉設定">×</button></div>
+      <div class="panel-head"><h2 class="ptitle">設定</h2><button class="ibtn viewmenu-btn" type="button" data-js="view-menu-btn" aria-label="切換頁面" aria-haspopup="true" aria-expanded="false" aria-controls="viewMenu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button class="ibtn panel-close" id="panelClose" type="button" aria-label="關閉設定">×</button></div>
       <div class="panel__section panel__section--ops" id="opsHome">
         <h2 id="opsTitle">本月操作</h2>
         <div class="group" id="opsGroup">
@@ -110,6 +111,7 @@
       </div>
       <nav class="tabs" aria-label="檢視"><a href="#roster" data-tab="roster">月班表</a><a href="#year" data-tab="year">年度休假</a></nav>
         <button class="synclight" type="button" data-sync data-state="idle" aria-label="同步狀態"><span class="sdot"></span><span class="stime"></span></button>
+        <button class="ibtn viewmenu-btn" type="button" data-js="view-menu-btn" aria-label="切換頁面" aria-haspopup="true" aria-expanded="false" aria-controls="viewMenu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
         <button class="btn lockbtn" type="button" aria-pressed="false"></button>
       <div class="group"><label class="glabel" for="meSel">人員</label><select id="meSel" class="btn"></select></div>
       <div class="brushbar"><div class="group brushbar__group--year" id="ybrushes" role="toolbar" aria-label="畫筆"><span class="glabel">畫筆</span></div></div>
@@ -119,7 +121,7 @@
     <div class="ywrap"><table class="year" id="ygrid"></table></div>
   </section>
 </main>
-<nav class="bnav" aria-label="主選單"><a href="#roster" data-tab="roster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>月班表</span></a><a href="#year" data-tab="year"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>年度休假</span></a><a href="#tools" data-tab="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>設定</span></a></nav>
+<nav class="viewmenu" id="viewMenu" data-js="view-menu" aria-label="主選單" hidden><a href="#roster" data-tab="roster"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>月班表</span></a><a href="#year" data-tab="year"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>年度休假</span></a><a href="#tools" data-tab="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg><span>設定</span></a></nav>
 <div class="toast" id="toast" hidden role="status"></div>
 
 <script>
@@ -546,7 +548,7 @@ function route(){
   const v=location.hash==='#year'?'year':location.hash==='#tools'?'tools':'roster';
   $('view-roster').hidden=v==='year';$('view-year').hidden=v!=='year';
   document.documentElement.classList.toggle('view-tools',v==='tools');
-  document.querySelectorAll('[data-tab]').forEach(a=>{const on=a.dataset.tab===v||(v==='tools'&&a.dataset.tab==='roster'&&!a.closest('.bnav'));
+  document.querySelectorAll('[data-tab]').forEach(a=>{const on=a.dataset.tab===v||(v==='tools'&&a.dataset.tab==='roster'&&!a.closest('.viewmenu'));
     if(on)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
   if(v==='year')renderYear();
   if(v==='tools'&&!isPhoneW())openPanel('seqBox');
@@ -557,6 +559,28 @@ function closePanel(){document.documentElement.classList.remove('panel-open');if
 $('panelClose').onclick=closePanel;$('panelScrim').onclick=closePanel;
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.documentElement.classList.contains('panel-open'))closePanel();});
 $('seqBtn').onclick=()=>openPanel('seqBox');
+/* 手機頁面選單：右上角按鈕開合；點選項目、點外面、捲動或按 Esc 關閉 */
+const viewMenu=document.querySelector('[data-js="view-menu"]');
+const viewMenuBtns=[...document.querySelectorAll('[data-js="view-menu-btn"]')];
+function setViewMenu(open,btn){
+  viewMenu.hidden=!open;
+  viewMenuBtns.forEach(b=>b.setAttribute('aria-expanded',String(open&&b===btn)));
+  if(!open)return;
+  viewMenu.style.setProperty('--viewmenu-top',Math.round(btn.getBoundingClientRect().bottom+6)+'px');
+  viewMenu.querySelector('[aria-current="page"]')?.focus();  // 鍵盤使用者可直接用 Tab 在選項間移動
+}
+function closeViewMenu(refocus){
+  if(viewMenu.hidden)return;
+  const btn=viewMenuBtns.find(b=>b.getAttribute('aria-expanded')==='true');
+  setViewMenu(false);
+  if(refocus)btn?.focus();
+}
+viewMenuBtns.forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();setViewMenu(viewMenu.hidden,b);}));
+viewMenu.addEventListener('click',e=>{if(e.target.closest('a'))closeViewMenu(false);});
+document.addEventListener('click',e=>{if(!viewMenu.contains(e.target))closeViewMenu(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeViewMenu(true);});
+viewMenu.addEventListener('focusout',e=>{if(e.relatedTarget&&!viewMenu.contains(e.relatedTarget))closeViewMenu(false);});
+window.addEventListener('scroll',()=>closeViewMenu(false),{passive:true});
 // 電腦版：本月操作按鈕放在第二條工具帶；手機版：放回「設定」頁
 function placeOps(){const g=$('opsGroup');if(isPhoneW()){if(g.parentElement!==$('opsHome'))$('opsHome').appendChild(g);}else if(g.parentElement!==$('opsBar'))$('opsBar').insertBefore(g,$('seqBtn'));}
 matchMedia('(max-width:640px)').addEventListener('change',()=>{placeOps();if(isPhoneW())document.documentElement.classList.remove('panel-open');});
