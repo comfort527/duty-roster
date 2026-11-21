@@ -304,6 +304,10 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .pill{padding:4px 10px;font-size:12px}
   /* roster: fit all people on screen */
   .gridwrap{max-height:none;overflow:visible;border-radius:0;touch-action:pan-y}
+  /* 邊緣滑動換月：表格跟著手指水平移動；放開後回彈或滑出 */
+  main{overflow-x:clip}
+  .gridwrap.is-swiping{transform:translateX(var(--swipe-x,0px));will-change:transform}
+  .gridwrap.is-swipe-settle{transition:transform .22s cubic-bezier(.2,.8,.2,1)}
   .roster{width:100%;table-layout:fixed}
   .roster thead th{padding:6px 1px 4px;top:calc(env(safe-area-inset-top,0px) + var(--rtoolsH,0px))}
   .tools--roster,.tools--year{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);margin-inline:-16px;padding:8px 16px 6px;box-shadow:0 1px 0 var(--line)}

@@ -18,9 +18,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@700&family=IBM+Plex+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <!-- 修改任何 CSS 檔後請更新 ?v= 版本號，讓瀏覽器重新抓新樣式 -->
-<link rel="stylesheet" href="css/tokens.css?v=20261123">
-<link rel="stylesheet" href="css/base.css?v=20261123">
-<link rel="stylesheet" href="css/components.css?v=20261123">
+<link rel="stylesheet" href="css/tokens.css?v=20261124">
+<link rel="stylesheet" href="css/base.css?v=20261124">
+<link rel="stylesheet" href="css/components.css?v=20261124">
 </head>
 <body>
 
@@ -444,6 +444,63 @@ $('fillBtn').onclick=()=>{const a=span();snap(a);let k=0;S.people.forEach((_,p)=
 $('clearBtn').onclick=()=>{snap();const k=ym(cur.y,cur.m);S.roster[k]={};NOTE_COLS.forEach(c=>{if(S[c.k])delete S[c.k][k];});if(S.frames)delete S.frames[k];if(S.otherLabels)delete S.otherLabels[k];save();renderRoster();renderYear();toast('已清空本月班表、註記與框線',true);};
 $('prevM').onclick=()=>{cur.m--;if(cur.m<1){cur.m=12;cur.y--;}lastCell=null;renderRoster();};
 $('nextM').onclick=()=>{cur.m++;if(cur.m>12){cur.m=1;cur.y++;}lastCell=null;renderRoster();};
+/* 手機：從螢幕左邊緣往右滑回上個月、右邊緣往左滑到下個月，表格跟著手指走 */
+const SWIPE_EDGE=28,SWIPE_COMMIT=.28,SWIPE_MS=220;
+const swipeWrap=$('rgridwrap');
+let swipe=null,swipeBusy=false;  // swipe：{x0,y0,dir(+1 左緣／-1 右緣),dx,t0,locked}
+const prefersReducedMotion=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+function canStartSwipe(e){
+  if(swipe||swipeBusy||e.touches.length!==1||!isPhoneW())return false;
+  if(!$('view-year').hidden||document.documentElement.classList.contains('view-tools'))return false;
+  if(e.target.closest('.tools,.viewmenu,.toast'))return false;
+  const x=e.touches[0].clientX;
+  return x<=SWIPE_EDGE||x>=innerWidth-SWIPE_EDGE;
+}
+function setSwipeX(x){swipeWrap.style.setProperty('--swipe-x',x+'px');}
+function slideTableTo(x,ms){
+  swipeWrap.classList.toggle('is-swipe-settle',ms>0);
+  setSwipeX(x);
+  return new Promise(done=>setTimeout(done,ms));
+}
+function resetSwipe(){swipeWrap.classList.remove('is-swiping','is-swipe-settle');setSwipeX(0);swipe=null;swipeBusy=false;}
+async function finishSwipe(commit){
+  const dir=swipe.dir,ms=prefersReducedMotion()?0:SWIPE_MS;
+  swipeBusy=true;
+  if(!commit){await slideTableTo(0,ms);resetSwipe();return;}
+  await slideTableTo(dir*innerWidth,ms);
+  $(dir>0?'prevM':'nextM').click();
+  swipeWrap.classList.remove('is-swipe-settle');
+  setSwipeX(-dir*innerWidth);
+  swipeWrap.getBoundingClientRect();  // 先定位到另一側，再滑進來
+  await slideTableTo(0,ms);
+  resetSwipe();
+}
+function trackSwipe(e){
+  if(!swipe||swipeBusy)return;
+  const t=e.touches[0],dx=t.clientX-swipe.x0,dy=t.clientY-swipe.y0;
+  if(!swipe.locked){
+    if(Math.abs(dy)>10&&Math.abs(dy)>Math.abs(dx)){swipe=null;return;}  // 上下捲動就放棄
+    if(Math.abs(dx)<10)return;
+    swipe.locked=true;swipeWrap.classList.add('is-swiping');
+  }
+  e.preventDefault();
+  swipe.dx=swipe.dir>0?Math.max(0,dx):Math.min(0,dx);
+  setSwipeX(swipe.dx);
+}
+function endSwipe(){
+  if(!swipe||swipeBusy)return;
+  if(!swipe.locked){swipe=null;return;}
+  const dist=Math.abs(swipe.dx),speed=dist/Math.max(1,Date.now()-swipe.t0);
+  finishSwipe(dist>innerWidth*SWIPE_COMMIT||(speed>.6&&dist>40));
+}
+document.addEventListener('touchstart',e=>{
+  if(!canStartSwipe(e))return;
+  const t=e.touches[0];
+  swipe={x0:t.clientX,y0:t.clientY,dir:t.clientX<=SWIPE_EDGE?1:-1,dx:0,t0:Date.now(),locked:false};
+},{passive:true});
+document.addEventListener('touchmove',trackSwipe,{passive:false});
+document.addEventListener('touchend',endSwipe);
+document.addEventListener('touchcancel',()=>{if(swipe?.locked&&!swipeBusy)finishSwipe(false);else if(!swipeBusy)swipe=null;});
 
 function norm(v){v=String(v).trim().replace(/値/g,'值').replace(/\s+/g,'');
   if(/^[xX✕×╳]$/.test(v))return'X';v=v.replace(/[○◯Oo]/g,'〇');const oi=OTHER_TYPES.findIndex((_,i)=>v===otherName(i)||v===otherCell(i));if(oi>=0)return OTHER_TYPES[oi].code;return RENAME[v]||v;}
