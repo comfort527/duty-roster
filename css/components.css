@@ -126,6 +126,9 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
 .roster th.c-note.n2,.roster td.c-note.n2{background:var(--note2)}
 .note-in{display:block;width:100%;height:27px;border:0;background:transparent;padding:5px 8px 0;font:inherit;font-size:12.5px;line-height:1.3;resize:none;overflow:hidden;color:inherit}
 .note-in:focus{outline:2px solid var(--sel);outline-offset:-2px;background:var(--surface)}
+/* 點開的註記格：浮起來顯示完整內容（高度由程式依內容計算） */
+.roster tbody td.c-note{position:relative}
+.note-in:focus{position:absolute;top:0;right:0;z-index:2;height:var(--note-h,auto);min-height:100%;box-shadow:var(--shadow-panel);border-radius:6px}
 
 /* side panel */
 .split{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
@@ -320,6 +323,7 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .roster .nlab{display:none}
   .notesel{display:block;width:100%;font-size:10px;padding:0;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-family:var(--font-body)}
   .note-in{height:25px;font-size:10.5px;line-height:1.15;padding:1px 3px 0;word-break:break-all}
+  .note-in:focus{width:min(60vw,220px);font-size:13px;line-height:1.35;padding:4px 6px}
   .dn{min-width:1.25em;font-size:13px}
   .dw{margin-left:1px;font-size:10px}
   td.cell{width:auto;min-width:0;height:26px}
@@ -327,6 +331,8 @@ td.cell.sel{box-shadow:inset 0 0 0 2px var(--sel)}
   .k-off{font-size:14px}
   .nm{width:100%;font-size:11px}
   .offsel{width:100%;font-size:10px;padding:0}
+  /* 鎖定時用不到輪序選單，收起來讓表格多出可視空間 */
+  .is-locked .roster .offsel{display:none}
   .roster tfoot th,.roster tfoot td{height:28px;font-size:12px}
   .panel{padding:12px;gap:12px}
   /* year */

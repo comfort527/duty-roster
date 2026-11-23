@@ -18,9 +18,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+Sung+HK:wght@700&family=IBM+Plex+Mono:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
 <!-- 修改任何 CSS 檔後請更新 ?v= 版本號，讓瀏覽器重新抓新樣式 -->
-<link rel="stylesheet" href="css/tokens.css?v=20261124">
-<link rel="stylesheet" href="css/base.css?v=20261124">
-<link rel="stylesheet" href="css/components.css?v=20261124">
+<link rel="stylesheet" href="css/tokens.css?v=20261125">
+<link rel="stylesheet" href="css/base.css?v=20261125">
+<link rel="stylesheet" href="css/components.css?v=20261125">
 </head>
 <body>
 
@@ -256,6 +256,7 @@ function focusIndex(){
 }
 const isFocusOn=()=>{const f=focusIndex();return f!==null&&f<S.people.length;};
 let brush='X',ybrush='rest',painting=false,ypainting=false,lastCell=null,undo=null;
+let brushBeforeFrame='X',frameOnce=false;  // 鎖定時框線只標一格就放開畫筆
 
 /* ---------- toast ---------- */
 let tt;
@@ -299,7 +300,7 @@ function renderBrushes(){
     b.onclick=()=>{brush=l.k;renderBrushes();};lg.appendChild(b);});
   [['F:r','r','紅框'],['F:k','k','黑框']].forEach(([k,c,n])=>{const b=document.createElement('button');b.type='button';b.className='brush frame-brush';
     b.innerHTML='<span class="fsw '+c+'" aria-hidden="true"></span><span class="txt lf">'+n+'</span>';b.setAttribute('aria-label',n+'（鎖定時也能標記）');b.title=n+'：點格子加上或取消，鎖定時也能用';
-    b.setAttribute('aria-pressed',brush===k);b.onclick=()=>{brush=k;renderBrushes();};lg.appendChild(b);});
+    b.setAttribute('aria-pressed',brush===k);b.onclick=()=>{if(!isFrame(brush))brushBeforeFrame=brush;brush=k;renderBrushes();};lg.appendChild(b);});
 }
 
 /* ---------- 月班表：表頭、每日一列、表尾分開組裝 ---------- */
@@ -397,11 +398,14 @@ function paintCell(td){
 function selCell(td){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));td.classList.add('sel');lastCell={p:+td.dataset.p,d:+td.dataset.d};}
 const rg=$('rgrid');
 rg.addEventListener('pointerdown',e=>{if(!editMode&&!isFrame(brush))return;const td=e.target.closest('td.cell');if(!td)return;
+  if(!editMode)frameOnce=true;
   if(e.pointerType==='mouse'){painting=true;e.preventDefault();}
   if(isFrame(brush)){frameMode=getF(+td.dataset.p,+td.dataset.d)===brush.slice(2)?'remove':'add';}else selCell(td);
   paintCell(td);});
 rg.addEventListener('pointerover',e=>{if(!painting)return;const td=e.target.closest('td.cell');if(td)paintCell(td);});
-window.addEventListener('pointerup',()=>{painting=false;ypainting=false;});
+window.addEventListener('pointerup',()=>{painting=false;ypainting=false;if(frameOnce){frameOnce=false;dropFrameBrush();}});
+/* 放開框線畫筆，回到選框線前的畫筆（避免鎖定時捲動誤加框） */
+function dropFrameBrush(){if(!isFrame(brush))return;brush=brushBeforeFrame;renderBrushes();}
 rg.addEventListener('input',e=>{const t=e.target;if(!t.classList.contains('note-in'))return;
   if(/[\r\n]/.test(t.value))t.value=t.value.replace(/[\r\n]+/g,' ');
   const nk=NOTE_COLS[+t.dataset.n||0].k;S[nk]=S[nk]||{};const k=ym(cur.y,cur.m);const M=S[nk][k]||(S[nk][k]={});
@@ -423,6 +427,21 @@ rg.addEventListener('keydown',e=>{
   e.preventDefault();const p=+e.target.dataset.p;toggleFocus(p);$('nm-'+p)?.focus();
 });
 rg.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList.contains('note-in')){e.preventDefault();e.target.blur();}});
+/* 註記格：點開（取得焦點）時依內容長高，浮在表格上顯示完整文字；離開後恢復兩行 */
+function fitNoteHeight(t){
+  t.style.setProperty('--note-h','0px');
+  t.style.setProperty('--note-h',t.scrollHeight+2+'px');
+}
+/* 點開的註記格若被固定的表頭或統計列蓋住，捲到看得見的位置（手機捲整頁，電腦捲表格） */
+function keepNoteVisible(t){
+  const r=t.getBoundingClientRect();
+  const head=rg.tHead.rows[0].cells[0].getBoundingClientRect().bottom,foot=rg.tFoot.rows[0].cells[0].getBoundingClientRect().top;
+  const by=r.top<head?r.top-head-6:r.bottom>foot?Math.min(r.bottom-foot+6,r.top-head-6):0;
+  if(by)(isPhoneW()?window:$('rgridwrap')).scrollBy(0,by);
+}
+rg.addEventListener('focusin',e=>{if(!e.target.classList.contains('note-in'))return;fitNoteHeight(e.target);keepNoteVisible(e.target);});
+rg.addEventListener('input',e=>{if(e.target.classList.contains('note-in'))fitNoteHeight(e.target);});
+rg.addEventListener('focusout',e=>{if(e.target.classList.contains('note-in'))e.target.style.removeProperty('--note-h');});
 rg.addEventListener('change',e=>{
   if(e.target.classList.contains('notesel')){noteView=+e.target.value;writeStorage('duty-roster-nv',String(noteView));renderRoster();return;}
   const t=e.target;const p=+t.dataset.p;
@@ -656,7 +675,7 @@ function applyLock(){
   document.querySelectorAll('.lockbtn').forEach(b=>{b.setAttribute('aria-pressed',String(!L));
     b.innerHTML=(L?ICON_LOCK:ICON_OPEN)+'<span class="txt">'+(L?'開始編輯':'完成編輯')+'</span>';
     b.setAttribute('aria-label',L?'目前鎖定，按一下開始編輯':'編輯中，按一下鎖定');b.title=L?'開始編輯':'完成編輯並鎖定';});
-  if(L){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));lastCell=null;
+  if(L){document.querySelectorAll('td.cell.sel').forEach(x=>x.classList.remove('sel'));lastCell=null;dropFrameBrush();
     const a=document.activeElement;if(a&&a.closest&&a.closest('#rgrid,#ystats')&&!a.classList.contains('note-in'))a.blur();}
 }
 document.addEventListener('click',e=>{const b=e.target.closest('.lockbtn');if(!b)return;editMode=!editMode;applyLock();
