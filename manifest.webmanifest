@@ -1,9 +1,18 @@
 {
+  "id": "/duty-roster/",
   "name": "勤休輪值簿",
   "short_name": "勤休輪值簿",
+  "description": "單位勤休輪值班表：月班表、年度休假統計，電腦與手機同步",
+  "lang": "zh-Hant-TW",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "launch_handler": {
+    "client_mode": [
+      "focus-existing",
+      "auto"
+    ]
+  },
   "background_color": "#edf1ee",
   "theme_color": "#edf1ee",
   "icons": [

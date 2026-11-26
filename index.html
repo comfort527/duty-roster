@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png?v=20261115">
 <link rel="apple-touch-icon" sizes="167x167" href="assets/icons/apple-touch-icon-167.png?v=20261115">
 <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/apple-touch-icon-152.png?v=20261115">
-<link rel="manifest" href="manifest.webmanifest?v=20261115">
+<link rel="manifest" href="manifest.webmanifest?v=20261126">
 <meta name="apple-mobile-web-app-title" content="勤休輪值簿">
 <meta name="theme-color" content="#edf1ee">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -796,6 +796,14 @@ function applyRemote(json){
   renderAll();
 }
 document.addEventListener('focusout',()=>{setTimeout(()=>{if(pendingRemote&&!editing())applyRemote(pendingRemote);},0);});
+/* 同一台裝置同時開了兩個視窗（例如主畫面 App 和瀏覽器分頁）：另一個視窗存檔後，這裡立刻換成新資料，避免舊資料把新的蓋掉 */
+window.addEventListener('storage',e=>{if(e.key===KEY&&e.newValue)applyRemote(e.newValue);});
+/* 網頁 App 離線快取：只管 /duty-roster/ 範圍，不影響同一個 github.io 網域的其他 App（本機 file:// 開啟時略過） */
+function registerOfflineCache(){
+  if(!('serviceWorker' in navigator)||!/^https?:$/.test(location.protocol))return;
+  navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(err=>{console.error('離線功能啟用失敗',err);toast('離線功能啟用失敗，沒有網路時可能打不開');});
+}
+window.addEventListener('load',registerOfflineCache);
 function reportBadResponse(step,body){
   console.error('GitHub '+step+'回應格式不正確',body);
   setSync(SYNC_STATUS.ERROR,'同步失敗：GitHub 回應格式不正確，請稍後按「立即同步」。');
