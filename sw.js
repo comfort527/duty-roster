@@ -38,14 +38,25 @@ function isOwnRequest(request) {
   return request.method === 'GET' && url.origin === self.location.origin && url.pathname.startsWith(SCOPE_PATH);
 }
 
-// 首頁：先抓網路拿最新版；沒網路或太慢時改用快取
-async function respondWithPage(event) {
-  const cache = await caches.open(CACHE_NAME);
-  const fresh = fetch(event.request).then((res) => {
-    if (res.ok) event.waitUntil(cache.put(PAGE_KEY, res.clone()));
-    return res;
-  });
-  const cached = await cache.match(PAGE_KEY);
+// 只有首頁本身才存進首頁快取；直接開其他檔案（例如樣式檔）的換頁不攔，避免把首頁快取蓋掉
+function isAppPage(request) {
+  const path = new URL(request.url).pathname;
+  return path === SCOPE_PATH || path === SCOPE_PATH + 'index.html';
+}
+
+// 首頁：先抓網路拿最新版；沒網路或超過 4 秒時改用快取。
+// 存快取的工作在一開始就登記，就算已經先回應了快取版，新版下載完仍會存起來。
+function respondWithPage(event) {
+  const fresh = fetch(event.request);
+  const copy = fresh.then((res) => (res.ok ? res.clone() : null));
+  event.waitUntil(copy
+    .then(async (res) => { if (res) await (await caches.open(CACHE_NAME)).put(PAGE_KEY, res); })
+    .catch((err) => console.error('首頁快取更新失敗（可能沒有網路）', err)));
+  return pageOrCached(fresh);
+}
+
+async function pageOrCached(fresh) {
+  const cached = await (await caches.open(CACHE_NAME)).match(PAGE_KEY);
   if (!cached) return fresh;
   const slow = new Promise((resolve) => setTimeout(() => resolve(cached), PAGE_TIMEOUT_MS));
   return Promise.race([fresh.catch(() => cached), slow]);
@@ -70,6 +81,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  if (!isOwnRequest(event.request)) return;
-  event.respondWith(event.request.mode === 'navigate' ? respondWithPage(event) : respondWithAsset(event.request));
+  const request = event.request;
+  if (!isOwnRequest(request)) return;
+  if (request.mode !== 'navigate') { event.respondWith(respondWithAsset(request)); return; }
+  if (isAppPage(request)) event.respondWith(respondWithPage(event));
 });
